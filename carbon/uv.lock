@@ -10,6 +10,9 @@ resolution-markers = [
     "platform_machine == 's390x' and sys_platform != 'emscripten' and sys_platform != 'win32'",
 ]
 
+[manifest]
+build-constraints = [{ name = "torch", specifier = "==2.10.0" }]
+
 [[package]]
 name = "accelerate"
 version = "1.13.0"
@@ -240,7 +243,7 @@ evaluation = [
 ]
 evo2 = [
     { name = "evo2" },
-    { name = "flash-attn" },
+    { name = "kernels" },
     { name = "onnx" },
     { name = "transformer-engine", extra = ["core-cu12", "pytorch"] },
 ]
@@ -272,7 +275,7 @@ evaluation = [
 ]
 evo2 = [
     { name = "evo2", specifier = "==0.5.5" },
-    { name = "flash-attn", specifier = "==2.8.0.post2" },
+    { name = "kernels", specifier = ">=0.14.1" },
     { name = "onnx", specifier = ">=1.21.0" },
     { name = "transformer-engine", extras = ["core-cu12", "pytorch"], specifier = "==2.13.0" },
 ]
@@ -721,16 +724,6 @@ sdist = { url = "https://files.pythonhosted.org/packages/b5/fe/997687a931ab51049
 wheels = [
     { url = "https://files.pythonhosted.org/packages/81/47/dd9a212ef6e343a6857485ffe25bba537304f1913bdbed446a23f7f592e1/filelock-3.29.0-py3-none-any.whl", hash = "sha256:96f5f6344709aa1572bbf631c640e4ebeeb519e08da902c39a001882f30ac258", size = 39812, upload-time = "2026-04-19T15:39:08.752Z" },
 ]
-
-[[package]]
-name = "flash-attn"
-version = "2.8.0.post2"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "einops" },
-    { name = "torch" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/32/5c/c7610beeb2fc0e70d0c09a93490bb2d07fb6c8fa1f80ef9617b0cd556d76/flash_attn-2.8.0.post2.tar.gz", hash = "sha256:b51d7015eb78f7ab2c332ec7c36681d7e97834f010b52eb4db1f118351982f58", size = 7857730, upload-time = "2025-06-15T01:39:32.219Z" }
 
 [[package]]
 name = "flashinfer-cubin"

@@ -164,9 +164,9 @@ def run_hf(df: pd.DataFrame, args, dtype_str: str):
 
 
 def run_evo2(df: pd.DataFrame, args):
-    from evo2_runtime import preload_cudnn_libraries
+    from evo2_runtime import setup_evo2_runtime
 
-    preload_cudnn_libraries()
+    setup_evo2_runtime()
     from evo2 import Evo2
 
     model_name = args.model.split("/")[-1]

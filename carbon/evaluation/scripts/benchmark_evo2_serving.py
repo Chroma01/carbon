@@ -151,9 +151,9 @@ def synchronize_cuda() -> None:
 
 def load_evo2_model(model_name: str):
     try:
-        from evo2_runtime import preload_cudnn_libraries
+        from evo2_runtime import setup_evo2_runtime
 
-        preload_cudnn_libraries()
+        setup_evo2_runtime()
         from evo2 import Evo2
     except Exception as exc:
         raise RuntimeError(

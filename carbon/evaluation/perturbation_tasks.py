@@ -196,9 +196,9 @@ def score_hf(seqs, model, revision, dtype_str, batch_size: int):
 
 
 def score_evo2(seqs, batch_size: int, model_name: str):
-    from evo2_runtime import preload_cudnn_libraries
+    from evo2_runtime import setup_evo2_runtime
 
-    preload_cudnn_libraries()
+    setup_evo2_runtime()
     from evo2 import Evo2
 
     torch.cuda.set_device(0)
