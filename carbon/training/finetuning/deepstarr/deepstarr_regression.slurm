@@ -16,7 +16,7 @@ if [[ "${SLURM_NNODES:-1}" != "1" ]]; then
   exit 1
 fi
 NUM_PROCESSES="${NUM_PROCESSES:-${GPUS_PER_NODE}}"
-ACCELERATE_CONFIG="${ACCELERATE_CONFIG:-finetuning/deepstarr/fsdp2_carbon.yaml}"
+ACCELERATE_CONFIG="${ACCELERATE_CONFIG:-training/finetuning/configs/fsdp2_carbon.yaml}"
 ACCELERATE="${ACCELERATE:-.venv/bin/accelerate}"
 if [[ -z "${MAIN_PROCESS_PORT:-}" ]]; then
   if [[ -n "${SLURM_JOB_ID:-}" ]]; then
@@ -62,7 +62,7 @@ fi
   --config_file "${ACCELERATE_CONFIG}" \
   --num_processes "${NUM_PROCESSES}" \
   --main_process_port "${MAIN_PROCESS_PORT}" \
-  finetuning/deepstarr/deepstarr_train.py \
+  training/finetuning/deepstarr/deepstarr_train.py \
   --model "${MODEL}" \
   --output_dir "${OUTPUT_DIR}" \
   --run_name "${RUN_NAME}" \

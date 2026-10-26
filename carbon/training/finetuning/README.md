@@ -7,14 +7,15 @@ This directory contains task-specific fine-tuning recipes for Carbon models.
 | [`deepstarr/`](deepstarr/) | DeepSTARR enhancer activity regression | PCC / log PCC |
 | [`promoter_activity/`](promoter_activity/) | Random Promoter DREAM activity regression | PCC / Spearman |
 | [`malinois/`](malinois/) | Malinois MPRA activity regression | PCC / Spearman |
-| [`finetune_promoter.py`](finetune_promoter.py) | GUE promoter detection | accuracy, F1, MCC, AUROC |
-| [`finetune_sft.py`](finetune_sft.py) | Supervised fine-tuning with FNS | perplexity / loss |
+| [`promoter_detection/`](promoter_detection/) | GUE promoter detection | accuracy, F1, MCC, AUROC |
+| [`sft/`](sft/) | Supervised fine-tuning with FNS | perplexity / loss |
 
 ## Environment
 
-Use the repository environment before running the recipe scripts:
+Run the recipes from the `carbon/` directory, using its environment:
 
 ```sh
+cd carbon
 uv sync --frozen
 source .venv/bin/activate
 hf auth whoami
@@ -32,9 +33,9 @@ fine-tuning.
 
 ```sh
 accelerate launch \
-  --config_file finetuning/deepstarr/fsdp2_carbon.yaml \
+  --config_file training/finetuning/configs/fsdp2_carbon.yaml \
   --num_processes 1 \
-  finetuning/deepstarr/deepstarr_train.py \
+  training/finetuning/deepstarr/deepstarr_train.py \
   --model HuggingFaceBio/Carbon-3B \
   --output_dir scratch/deepstarr/carbon-3b-regression-train
 ```
@@ -51,9 +52,9 @@ microbatch rather than independently on each rank.
 
 ```sh
 accelerate launch \
-  --config_file finetuning/deepstarr/fsdp2_carbon.yaml \
+  --config_file training/finetuning/configs/fsdp2_carbon.yaml \
   --num_processes 1 \
-  finetuning/promoter_activity/promoter_activity_train.py \
+  training/finetuning/promoter_activity/promoter_activity_train.py \
   --output_dir scratch/promoter_activity/carbon-500m-pearson-huber-200k
 ```
 
@@ -68,9 +69,9 @@ benchmark chromosome holdout split and an MSE-only full fine-tuning recipe.
 
 ```sh
 accelerate launch \
-  --config_file finetuning/deepstarr/fsdp2_carbon.yaml \
+  --config_file training/finetuning/configs/fsdp2_carbon.yaml \
   --num_processes 1 \
-  finetuning/malinois/malinois_train.py \
+  training/finetuning/malinois/malinois_train.py \
   --model HuggingFaceBio/Carbon-3B \
   --output_dir scratch/malinois/carbon-3b-mse-smoke \
   --max_train_samples 512 \
@@ -105,7 +106,7 @@ Dataset: `InstaDeepAI/nucleotide_transformer_downstream_tasks`, config
 Single GPU:
 
 ```sh
-python finetune_promoter.py \
+python training/finetuning/promoter_detection/finetune_promoter.py \
     --model HuggingFaceBio/Carbon-3B \
     --add_dna_tag \
     --output_dir ./outputs/promoter-carbon-3B
@@ -114,7 +115,7 @@ python finetune_promoter.py \
 Multi-GPU with `torchrun`:
 
 ```sh
-torchrun --nproc_per_node=8 finetune_promoter.py \
+torchrun --nproc_per_node=8 training/finetuning/promoter_detection/finetune_promoter.py \
     --model HuggingFaceBio/Carbon-3B \
     --add_dna_tag \
     --batch_size 4 --grad_accum 4 \
@@ -165,7 +166,7 @@ individual nucleotides matter.
 Single GPU:
 
 ```sh
-python finetune_sft.py \
+python training/finetuning/sft/finetune_sft.py \
     --model HuggingFaceBio/Carbon-3B \
     --dataset your/dataset \
     --add_dna_tag \
@@ -175,7 +176,7 @@ python finetune_sft.py \
 Multi-GPU with `torchrun`:
 
 ```sh
-torchrun --nproc_per_node=8 finetune_sft.py \
+torchrun --nproc_per_node=8 training/finetuning/sft/finetune_sft.py \
     --model HuggingFaceBio/Carbon-3B \
     --dataset your/dataset \
     --add_dna_tag \
@@ -186,7 +187,7 @@ torchrun --nproc_per_node=8 finetune_sft.py \
 DNA-only loss (ignore BPE tokens):
 
 ```sh
-python finetune_sft.py \
+python training/finetuning/sft/finetune_sft.py \
     --model HuggingFaceBio/Carbon-3B \
     --dataset your/dataset \
     --add_dna_tag \
@@ -216,7 +217,7 @@ Example dataset structure:
 
 ### Implementation
 
-The FNS loss is implemented in [`fns_trainer.py`](fns_trainer.py) as a custom
+The FNS loss is implemented in [`fns_trainer.py`](sft/fns_trainer.py) as a custom
 `Trainer` subclass. It automatically classifies tokens and applies appropriate
 loss:
 
@@ -229,6 +230,7 @@ first forward pass, and is compatible with DDP multi-GPU training.
 ### Dependencies
 
 ```sh
+cd carbon
 uv sync --frozen
 source .venv/bin/activate
 ```

@@ -32,6 +32,7 @@ workspace.
 ## Environment
 
 ```sh
+cd carbon
 uv sync --frozen
 source .venv/bin/activate
 hf auth whoami
@@ -44,9 +45,9 @@ jobs on the same node, set distinct `MAIN_PROCESS_PORT` values.
 
 ```sh
 accelerate launch \
-  --config_file finetuning/deepstarr/fsdp2_carbon.yaml \
+  --config_file training/finetuning/configs/fsdp2_carbon.yaml \
   --num_processes 1 \
-  finetuning/malinois/malinois_train.py \
+  training/finetuning/malinois/malinois_train.py \
   --model HuggingFaceBio/Carbon-3B \
   --output_dir scratch/malinois/smoke \
   --max_train_samples 512 \
@@ -63,7 +64,7 @@ accelerate launch \
 
 ```sh
 RUN_NAME=carbon-3b-malinois-mse \
-sbatch finetuning/malinois/malinois_regression.slurm
+sbatch training/finetuning/malinois/malinois_regression.slurm
 ```
 
 For the exact internal 3B checkpoint used in our experiments, set `MODEL` to
@@ -73,12 +74,12 @@ are:
 ```sh
 MODEL=HuggingFaceBio/Carbon-500M-remote \
 RUN_NAME=carbon-500m-malinois-mse \
-sbatch finetuning/malinois/malinois_regression.slurm
+sbatch training/finetuning/malinois/malinois_regression.slurm
 
 MODEL=hf-carbon/carbon-8B-hybrid-loss-1T-v1 \
 RUN_NAME=carbon-8b-malinois-mse \
 TORCH_DTYPE=bfloat16 \
-sbatch finetuning/malinois/malinois_regression.slurm
+sbatch training/finetuning/malinois/malinois_regression.slurm
 ```
 
 ## Outputs

@@ -21,6 +21,7 @@ microbatch correlation instead of a per-rank local correlation.
 ## Environment
 
 ```sh
+cd carbon
 uv sync --frozen
 source .venv/bin/activate
 hf auth whoami
@@ -29,7 +30,7 @@ hf auth whoami
 ## Smoke Run
 
 ```sh
-python finetuning/promoter_activity/promoter_activity_train.py \
+python training/finetuning/promoter_activity/promoter_activity_train.py \
   --output_dir scratch/promoter_activity/smoke-500m \
   --max_train_samples 128 \
   --max_eval_samples 64 \
@@ -43,9 +44,9 @@ python finetuning/promoter_activity/promoter_activity_train.py \
 
 ```sh
 accelerate launch \
-  --config_file finetuning/deepstarr/fsdp2_carbon.yaml \
+  --config_file training/finetuning/configs/fsdp2_carbon.yaml \
   --num_processes 1 \
-  finetuning/promoter_activity/promoter_activity_train.py \
+  training/finetuning/promoter_activity/promoter_activity_train.py \
   --output_dir scratch/promoter_activity/carbon-500m-pearson-huber-200k \
   --run_name carbon-500m-promoter-pearson-huber-200k
 ```
@@ -54,9 +55,9 @@ accelerate launch \
 
 ```sh
 accelerate launch \
-  --config_file finetuning/deepstarr/fsdp2_carbon.yaml \
+  --config_file training/finetuning/configs/fsdp2_carbon.yaml \
   --num_processes 8 \
-  finetuning/promoter_activity/promoter_activity_train.py \
+  training/finetuning/promoter_activity/promoter_activity_train.py \
   --output_dir scratch/promoter_activity/carbon-500m-pearson-huber-200k-8gpu \
   --run_name carbon-500m-promoter-pearson-huber-200k-8gpu \
   --per_device_train_batch_size 2 \
@@ -69,7 +70,7 @@ because Pearson correlation is poorly conditioned on very small batches.
 ## Slurm
 
 ```sh
-sbatch finetuning/promoter_activity/promoter_activity_regression.slurm
+sbatch training/finetuning/promoter_activity/promoter_activity_regression.slurm
 ```
 
 For eight GPUs on one node:
@@ -77,7 +78,7 @@ For eight GPUs on one node:
 ```sh
 GPUS_PER_NODE=8 \
 NUM_PROCESSES=8 \
-sbatch --gres=gpu:8 finetuning/promoter_activity/promoter_activity_regression.slurm
+sbatch --gres=gpu:8 training/finetuning/promoter_activity/promoter_activity_regression.slurm
 ```
 
 The Slurm wrapper is a single-node template. If launching multiple Accelerate
@@ -91,7 +92,7 @@ MAIN_PROCESS_PORT=29600 \
 MAX_TRAIN_SAMPLES=10000 \
 MAX_EVAL_SAMPLES=2000 \
 MAX_STEPS=100 \
-sbatch finetuning/promoter_activity/promoter_activity_regression.slurm
+sbatch training/finetuning/promoter_activity/promoter_activity_regression.slurm
 ```
 
 The recipe pins the dataset revision because the supervised

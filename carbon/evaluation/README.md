@@ -27,8 +27,8 @@ one flag, so the same script runs on Carbon, GENERator, or Evo2.
 > primary sources live in [`data_prep/`](data_prep). Not needed for normal
 > eval runs — every command below defaults to the prebuilt Hub parquets.
 
-Run the commands below from the repository root. `uv run --group evaluation`
-uses the root project environment plus evaluation-only dependencies.
+Run the commands below from the `carbon/` directory. `uv run --group evaluation`
+uses the `carbon/` project environment plus evaluation-only dependencies.
 
 The two VEP scripts use different scoring recipes. BRCA / TraitGym use
 **centered + full-LL delta** (the Evo2 / TraitGym convention recent papers
@@ -346,7 +346,7 @@ We used n=100 at 16-32 k and n=20 at 64 k (smaller n = noisier estimates).
 Aggregate across shards by concatenating per-shard parquets and taking a sample-weighted mean of `gen_exact_match`.
 
 ```bash
-# From the repository root: Evo2 at 32k, n=100 split across 6 shards (1 node each)
+# From the carbon/ directory: Evo2 at 32k, n=100 split across 6 shards (1 node each)
 for SHARD in 0 1 2 3 4 5; do
   POOL=100 SHARD=$SHARD NSHARDS=6 TASK=niah CTX=32768 \
     sbatch evaluation/slurm/evo2-7b/genome_niah.sbatch

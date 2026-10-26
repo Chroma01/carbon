@@ -37,7 +37,7 @@ Taxonomic structure in the separator embedding space cannot be explained by sequ
 ## Structure
 
 ```
-carbon/clustering/
+carbon/analysis/
 ├── embedding_extraction/
 │   ├── extract_content_token_embeddings.py   # content-token embedding @ 16K bp → content_embeddings.npy
 │   └── extract_separator_embeddings.py       # separator embedding @ 8K/16K/48K → last_token_embeddings.npy
@@ -56,14 +56,14 @@ carbon/clustering/
 ### Content-token embedding — SVM cluster analysis
 
 ```bash
-python clustering/embedding_extraction/extract_content_token_embeddings.py
-python clustering/plots/plot_content_token_umap_svm.py
-python clustering/plots/plot_svm_cluster_grid.py
-python clustering/plots/plot_cluster_stats.py
+python analysis/embedding_extraction/extract_content_token_embeddings.py
+python analysis/plots/plot_content_token_umap_svm.py
+python analysis/plots/plot_svm_cluster_grid.py
+python analysis/plots/plot_cluster_stats.py
 ```
 
 **Input:** `data/eukaryote/test_new.parquet`  
-**Output:** `clustering/output/carbon_test_new_3emb_v2_16k/`
+**Output:** `analysis/output/carbon_test_new_3emb_v2_16k/`
 
 | File | Description |
 |---|---|
@@ -80,13 +80,13 @@ python clustering/plots/plot_cluster_stats.py
 ### Separator embedding — context-length ablation
 
 ```bash
-python clustering/embedding_extraction/extract_separator_embeddings.py --max_length 8192  --out_dir clustering/output/carbon_genstyle_8k_full
-python clustering/embedding_extraction/extract_separator_embeddings.py --max_length 16384 --out_dir clustering/output/carbon_genstyle_16k_full
-python clustering/embedding_extraction/extract_separator_embeddings.py --max_length 49152 --out_dir clustering/output/carbon_genstyle_48k_full
-python clustering/plots/plot_context_length_ablation.py
+python analysis/embedding_extraction/extract_separator_embeddings.py --max_length 8192  --out_dir analysis/output/carbon_genstyle_8k_full
+python analysis/embedding_extraction/extract_separator_embeddings.py --max_length 16384 --out_dir analysis/output/carbon_genstyle_16k_full
+python analysis/embedding_extraction/extract_separator_embeddings.py --max_length 49152 --out_dir analysis/output/carbon_genstyle_48k_full
+python analysis/plots/plot_context_length_ablation.py
 ```
 
-**Output:** `clustering/output/carbon_last_token_nn100_row.pdf`
+**Output:** `analysis/output/carbon_last_token_nn100_row.pdf`
 
 ---
 

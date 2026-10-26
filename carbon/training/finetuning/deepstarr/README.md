@@ -12,10 +12,11 @@ validation/test PCC metrics for the Dev and Hk targets.
 
 ## Environment
 
-Install the repository environment and make sure the Hugging Face CLI can see
+Install the `carbon/` environment and make sure the Hugging Face CLI can see
 your token:
 
 ```sh
+cd carbon
 uv sync --frozen
 source .venv/bin/activate
 hf auth whoami
@@ -35,9 +36,9 @@ metric writing on a small subset:
 
 ```sh
 accelerate launch \
-  --config_file finetuning/deepstarr/fsdp2_carbon.yaml \
+  --config_file training/finetuning/configs/fsdp2_carbon.yaml \
   --num_processes 1 \
-  finetuning/deepstarr/deepstarr_train.py \
+  training/finetuning/deepstarr/deepstarr_train.py \
   --model HuggingFaceBio/Carbon-3B \
   --output_dir scratch/deepstarr/smoke \
   --max_train_samples 256 \
@@ -64,9 +65,9 @@ set `ATTN_IMPLEMENTATION=sdpa` for a portable smoke run.
 
 ```sh
 accelerate launch \
-  --config_file finetuning/deepstarr/fsdp2_carbon.yaml \
+  --config_file training/finetuning/configs/fsdp2_carbon.yaml \
   --num_processes 1 \
-  finetuning/deepstarr/deepstarr_train.py \
+  training/finetuning/deepstarr/deepstarr_train.py \
   --model HuggingFaceBio/Carbon-3B \
   --output_dir scratch/deepstarr/carbon-3b-regression-train \
   --run_name carbon-3b-regression-train
@@ -76,11 +77,11 @@ Use `--save_model` to write a copy of the best loaded model to `best_model/`.
 
 ## Slurm
 
-Submit the same recipe from the repository root:
+Submit the same recipe from the `carbon/` directory:
 
 ```sh
 RUN_NAME=carbon-3b-deepstarr-full-ft \
-sbatch finetuning/deepstarr/deepstarr_regression.slurm
+sbatch training/finetuning/deepstarr/deepstarr_regression.slurm
 ```
 
 Common overrides include `MAX_STEPS`, `MAX_TRAIN_SAMPLES`,

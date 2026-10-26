@@ -16,7 +16,7 @@ The classification head is a single linear layer on top of the pooled hidden
 states — Transformers initialises it automatically.
 
 For Carbon hybrid models we wrap each DNA sequence with `<dna>` so the
-tokenizer routes it to 6-mer mode. See ../evaluation/README.md for the DNA-tag
+tokenizer routes it to 6-mer mode. See ../../../evaluation/README.md for the DNA-tag
 explanation.
 
 Example (single GPU):

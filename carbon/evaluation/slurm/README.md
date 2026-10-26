@@ -4,7 +4,7 @@ Reference SLURM scripts the Carbon team uses to run the eval suite on the
 **internal HF cluster**. Cluster settings such as partition `hopper-prod`,
 GPU counts, and walltimes are HF-specific — adapt them for your setup if needed.
 
-Submit these scripts from the repository root. Log and result paths are relative
+Submit these scripts from the `carbon/` directory. Log and result paths are relative
 to that directory. Each script sources `~/.bashrc` before enabling strict mode,
 so put local shell setup such as `uv` there instead of adding hard-coded PATH or
 library exports to the scripts.

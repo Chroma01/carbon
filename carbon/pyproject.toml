@@ -9,11 +9,10 @@ description = "Carbon dependencies for model training and evaluation"
 requires-python = ">=3.12,<3.13"
 readme = "README.md"
 dependencies = [
-  "vllm==0.19.1",
+  "torch>=2.10.0",
+  "transformers>=5.8.1",
   "datasets>=4.8.5",
   "accelerate>=1.13.0",
-  "kernels>=0.14.1",
-  "scikit-learn>=1.8.0",
 ]
 
 [tool.setuptools]
@@ -21,14 +20,28 @@ packages = []
 
 [tool.uv]
 no-build-isolation-package = ["flash-attn"]
+default-groups = ["evaluation", "finetuning", "analysis"]
 
 [dependency-groups]
 evaluation = [
+  "vllm==0.19.1",
   "pandas>=3.0.3",
+  "scikit-learn>=1.8.0",
+  "matplotlib>=3.11.2",
 ]
 evo2 = [
   "evo2==0.5.5",
   "flash-attn==2.8.0.post2",
   "onnx>=1.21.0",
   "transformer-engine[core-cu12,pytorch]==2.13.0",
+]
+finetuning = [
+  "kernels>=0.14.1",
+  "scikit-learn>=1.8.0",
+]
+analysis = [
+  "matplotlib>=3.11.2",
+  "pandas>=3.0.3",
+  "scikit-learn>=1.8.0",
+  "umap-learn>=0.5.12",
 ]
