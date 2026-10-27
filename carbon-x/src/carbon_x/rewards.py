@@ -69,7 +69,7 @@ def vepqa_groundedness_penalty_reward(completions, prompts, **kwargs) -> list[fl
     return [0.0 if grounded else -0.25 for grounded in vepqa_groundedness_reward(completions, prompts)]
 
 
-# Mirrors `_extract_position_answer` in `evaluation/tasks/seqrecqa.py`: the last <answer>...</answer> must end the
+# Mirrors how the SeqRecQA position benchmark extracts answers: the last <answer>...</answer> must end the
 # completion, its <dna> tags and whitespace are dropped, and `diff` answers are normalised to "POSITION BASE".
 SEQRECQA_POSITION_ANSWER_PATTERN = re.compile(r"<answer>((?:(?!<answer>).)*?)</answer>\s*\Z", re.DOTALL)
 SEQRECQA_POSITION_DNA_TAG_PATTERN = re.compile(r"</?dna>", re.IGNORECASE)
@@ -186,13 +186,13 @@ def mcq_accuracy_reward(completions, answer_text, **kwargs) -> list[float]:
 def if_accuracy_reward(completions, verifier_metadata, **kwargs) -> list[float]:
     """Score instruction-following completions 1.0 when they satisfy every constraint of their prompt, else 0.0.
 
-    Uses the checkers of NeMo Gym's instruction-following verifier, whose inputs the `verifier_metadata` column of
-    `HuggingFaceBio/Nemotron-RL-IF` stores: each constraint of `instruction_id_list` is built from its `kwargs` with
-    null values dropped, and a constraint whose checker raises counts as unmet. Every `count:count_increment_word`
-    constraint does, because the dataset stores its keywords as lists. As in the `ifeval` benchmark's strict scoring,
-    which uses the same checkers for the IFEval constraint types, an empty completion meets no constraint.
-    `count:count_unique` is checked on words only, as in open-instruct's fixed checker, because NeMo's counts repeated
-    punctuation as repeated words.
+    Uses the checkers of NeMo Gym's instruction-following verifier, whose inputs the `verifier_metadata` column of the
+    `if` rows of `HuggingFaceBio/FineDNA-RL` stores: each constraint of `instruction_id_list` is built from its
+    `kwargs` with null values dropped, and a constraint whose checker raises counts as unmet. Every
+    `count:count_increment_word` constraint does, because the dataset stores its keywords as lists. As in the `ifeval`
+    benchmark's strict scoring, which uses the same checkers for the IFEval constraint types, an empty completion meets
+    no constraint. `count:count_unique` is checked on words only, as in open-instruct's fixed checker, because NeMo's
+    counts repeated punctuation as repeated words.
     """
     import nltk
     from instruction_following_eval.evaluation import ensure_nltk_resource
@@ -225,7 +225,7 @@ def if_accuracy_reward(completions, verifier_metadata, **kwargs) -> list[float]:
 
 
 def dna_skills_reward(completions, gold_answer_json, **kwargs) -> list[float]:
-    """Score `HuggingFaceBio/carbon-dna-skills` (SeqLocate) completions with the strict DNA-skills verifier.
+    """Score DNA skills (SeqLocate) completions with the strict DNA-skills verifier.
 
     Uses [`~carbon_x.dna_skills.verify.verify`] on `gold_answer_json`: the single final answer, an `<answer>` block
     or else an `Answer:` line, must meet the task's grammar and gold, and every claim the reasoning writes in the SFT
