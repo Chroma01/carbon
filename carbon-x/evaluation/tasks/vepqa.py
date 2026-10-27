@@ -36,12 +36,8 @@ from inspect_ai.scorer import (
 from inspect_ai.solver import TaskState, generate
 
 
-DATASET_PATH = "HuggingFaceBio/vepqa"
-DATASET_REVISION = "1dbf17df3f8edf7c28f9f65ea2740bca86fb9dc6"
-MULTI_DATASET_REVISION = "bcaf10dbd8399c56f75d43d6ed363bf6caa3eea9"
-GROUP_DATASET_REVISION = "9cee4208ab2912f9faecdc8e93e6a4b85bbc9948"
-ALL_DATASET_REVISION = "bcaf10dbd8399c56f75d43d6ed363bf6caa3eea9"
-SINGLE_1K_DATASET_REVISION = "a94c567c8d96717f367867010513691bf6eba9f4"
+DATASET_PATH = "HuggingFaceBio/DNAIntelligenceIndex"
+DATASET_REVISION = "afbcf9022f581d92ab697ce5c8dfe65359e4ae5f"
 FAMILIES = {
     "coding_only": {"nonsense", "missense_variant", "synonymous_variant", "initiator_codon_variant", "stop_lost"},
     "canonical_splice_only": {"splice_acceptor_variant", "splice_donor_variant"},
@@ -79,25 +75,7 @@ MACRO_GROUPS = (
     "mixed_annotation_families",
     "unannotated",
 )
-COT_SUFFIX = "Let's think step by step. End with <answer>...</answer> containing only the final answer."
 _FINAL_ANSWER_PATTERN = re.compile(r"(<answer>[^<]*</answer>)\s*\Z", re.DOTALL)
-
-
-def record_to_sample(record: dict[str, Any], config: str, suffix: str | None = None) -> Sample:
-    return Sample(
-        input=record["question"] + "\n\n" + (record["prompt_suffix"] if suffix is None else suffix),
-        target=record["answer_text"],
-        id=record["id"],
-        metadata={
-            "tag": "binary",
-            "config": config,
-            "label_binary": record["label_binary"],
-            "group": record["region_group"],
-            "subtype": record["region_subtype"],
-            "region_group": record["region_group"],
-            "region_subtype": record["region_subtype"],
-        },
-    )
 
 
 def _extract_final_answer(completion: str) -> str | None:
@@ -125,11 +103,17 @@ def classify_consequence_terms(raw_terms: list[str], sample_id: str) -> tuple[st
     return group, group
 
 
-def all_record_to_sample(record: dict[str, Any], config: str = "binary_v3_random") -> Sample:
-    sample = record_to_sample(record, config)
-    _, subgroup = classify_consequence_terms(record["consequence_terms"], sample.id)
-    sample.metadata["subgroup"] = subgroup
-    return sample
+def record_to_sample(record: dict[str, Any]) -> Sample:
+    _, subgroup = classify_consequence_terms(record["consequence_terms"], record["id"])
+    return Sample(
+        input=record["prompt"],
+        target=record["answer_text"],
+        id=record["id"],
+        metadata={
+            "label_binary": record["answer_text"].removeprefix("<answer>").removesuffix("</answer>"),
+            "subgroup": subgroup,
+        },
+    )
 
 
 @metric(scores="unreduced")
@@ -290,104 +274,14 @@ def vepqa_scorer() -> Scorer:
     return score
 
 
-@scorer(metrics=[accuracy(), stderr(), vepqa_class_metrics()])
-def vepqa_group_scorer() -> Scorer:
-    async def score(state: TaskState, target: Target) -> Score:
-        answer = _extract_final_answer(state.output.completion)
-        normalized_answer = (
-            answer.removeprefix("<answer>").removesuffix("</answer>").strip().casefold()
-            if answer is not None
-            else None
-        )
-        predicted_label = normalized_answer if normalized_answer in {"benign", "pathogenic"} else None
-        normalized_target = target.text.strip().removeprefix("<answer>").removesuffix("</answer>").strip().casefold()
-        return Score(
-            value=CORRECT if predicted_label == normalized_target else INCORRECT,
-            answer=answer,
-            metadata={"predicted_label": predicted_label},
-        )
-
-    return score
-
-
-def group_record_to_sample(record: dict[str, Any], config: str, group_key: str, multi: bool) -> Sample:
-    subtype_key = group_key.removesuffix("_group") + "_subtype"
-    metadata = {
-        "tag": "binary",
-        "config": config,
-        "label_binary": record["label_binary"],
-        "group": record[group_key],
-        "subtype": record[subtype_key],
-        group_key: record[group_key],
-        subtype_key: record[subtype_key],
-        "source_split": record["source_split"],
-    }
-    if multi:
-        metadata.update({key: record[key] for key in ("source_id", "view", "layout", "wording")})
-    return Sample(
-        input=record["prompt"] if multi else record["question"] + "\n\n" + record["prompt_suffix"],
-        target=record["answer_text"],
-        id=record["id"],
-        metadata=metadata,
-    )
-
-
-def _vepqa_group_task(config: str, group_key: str, multi: bool) -> Task:
-    dataset = hf_dataset(
-        path=DATASET_PATH,
-        name=config,
-        split="test",
-        revision=GROUP_DATASET_REVISION,
-        sample_fields=lambda record: group_record_to_sample(record, config, group_key, multi),
-    )
-    return Task(dataset=dataset, solver=generate(), scorer=vepqa_group_scorer())
-
-
-def _vepqa_task(config: str, suffix: str | None = None) -> Task:
-    dataset = hf_dataset(
-        path=DATASET_PATH,
-        name=config,
-        split="test",
-        revision=DATASET_REVISION,
-        sample_fields=lambda record: record_to_sample(record, config, suffix),
-    )
-    return Task(
-        dataset=dataset,
-        solver=generate(),
-        scorer=vepqa_scorer(),
-    )
-
-
-@task
-def vepqa_single() -> Task:
-    return _vepqa_task("binary_v3_random")
-
-
-@task
-def vepqa_single_all() -> Task:
-    dataset = hf_dataset(
-        path=DATASET_PATH,
-        name="binary_v3_random",
-        split="train+test",
-        revision=ALL_DATASET_REVISION,
-        sample_fields=all_record_to_sample,
-    )
-    return Task(
-        dataset=dataset,
-        solver=generate(),
-        scorer=vepqa_all_scorer(),
-        headline_metric=HeadlineMetric(scorer="vepqa_all_scorer", metric="accuracy"),
-    )
-
-
 @task
 def vepqa_single_1k() -> Task:
     dataset = hf_dataset(
         path=DATASET_PATH,
-        name="binary_single_1k",
-        split="test",
-        revision=SINGLE_1K_DATASET_REVISION,
-        sample_fields=lambda record: all_record_to_sample(record, "binary_single_1k"),
+        name="frontier_vep",
+        split="train",
+        revision=DATASET_REVISION,
+        sample_fields=record_to_sample,
     )
     return Task(
         dataset=dataset,
@@ -395,67 +289,3 @@ def vepqa_single_1k() -> Task:
         scorer=vepqa_all_scorer(),
         headline_metric=HeadlineMetric(scorer="vepqa_all_scorer", metric="accuracy"),
     )
-
-
-@task
-def vepqa_double() -> Task:
-    return _vepqa_task("binary_v5_random")
-
-
-@task
-def vepqa_multi() -> Task:
-    dataset = hf_dataset(
-        path=DATASET_PATH,
-        name="binary_multi",
-        split="test",
-        revision=MULTI_DATASET_REVISION,
-        sample_fields=lambda record: Sample(
-            input=record["prompt"],
-            target=record["answer_text"],
-            id=record["id"],
-            metadata={
-                "tag": "binary",
-                "config": "binary_multi",
-                "label_binary": record["label_binary"],
-                "group": record["region_group"],
-                "subtype": record["region_subtype"],
-                "region_group": record["region_group"],
-                "region_subtype": record["region_subtype"],
-                "source_id": record["source_id"],
-                "view": record["view"],
-                "layout": record["layout"],
-                "wording": record["wording"],
-            },
-        ),
-    )
-    return Task(dataset=dataset, solver=generate(), scorer=vepqa_scorer())
-
-
-@task
-def vepqa_single_cot() -> Task:
-    return _vepqa_task("binary_v3_random", COT_SUFFIX)
-
-
-@task
-def vepqa_double_cot() -> Task:
-    return _vepqa_task("binary_v5_random", COT_SUFFIX)
-
-
-@task
-def vepqa_single_consequence() -> Task:
-    return _vepqa_group_task("binary_single_consequence", "consequence_group", multi=False)
-
-
-@task
-def vepqa_single_region() -> Task:
-    return _vepqa_group_task("binary_single_region", "region_group", multi=False)
-
-
-@task
-def vepqa_multi_consequence() -> Task:
-    return _vepqa_group_task("binary_multi_consequence", "consequence_group", multi=True)
-
-
-@task
-def vepqa_multi_region() -> Task:
-    return _vepqa_group_task("binary_multi_region", "region_group", multi=True)
