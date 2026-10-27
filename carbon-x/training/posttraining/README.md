@@ -26,9 +26,7 @@ uv sync
 ```
 
 The released model and dataset require a Hugging Face login with access to
-`HuggingFaceBio/Carbon-X-Base` and `HuggingFaceBio/FineDNA-SFT`. The launcher
-preserves `HF_TOKEN` or the original token-file location when moving caches
-to local storage on each node.
+`HuggingFaceBio/Carbon-X-Base` and `HuggingFaceBio/FineDNA-SFT`.
 
 ### SFT
 
@@ -51,28 +49,10 @@ The production config enables Trackio and Hub checkpoint publishing:
 sbatch --nodes=2 training/posttraining/sft.slurm --config training/posttraining/sft.yaml --accelerator deepspeed_zero3
 ```
 
-Checkpoints stay in the configured output directory on shared storage, including
-all nodes' optimizer shards. Each node creates its own local caches. The
-launcher determines the machine rank inside each Slurm task. Adjust the Slurm
-partition and `CARBON_CUDA_MODULE` for your cluster; the default is H100s with
-`cuda/13.0`.
+Checkpoints stay in the configured output directory on shared storage.
+Adjust the Slurm partition and CUDA module for your cluster.
 
-Set `CARBON_STAGE_VENV=1` to copy installed packages to each node's local disk
-before startup when imports from shared storage are slow. Smoke jobs enable
-this by default and reuse that local copy when resuming within the allocation.
-If metadata access is also slow, prepare a single archive on the login node and
-export its absolute path as `CARBON_VENV_ARCHIVE` before submitting:
-
-```sh
-mkdir -p .cache
-tar -C .venv -cf .cache/sft-venv.tar .
-export CARBON_VENV_ARCHIVE="$PWD/.cache/sft-venv.tar"
-```
-
-Rebuild the archive after changing dependencies. Repository source remains
-editable and is loaded from the shared checkout.
-
-Pass training overrides after `--`; the older `--args "..."` form also works:
+Pass training overrides after `--`:
 
 ```sh
 sbatch --nodes=1 training/posttraining/sft.slurm \
