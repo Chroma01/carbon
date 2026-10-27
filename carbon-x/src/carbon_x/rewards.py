@@ -69,7 +69,7 @@ def vepqa_groundedness_penalty_reward(completions, prompts, **kwargs) -> list[fl
     return [0.0 if grounded else -0.25 for grounded in vepqa_groundedness_reward(completions, prompts)]
 
 
-# Mirrors `_extract_position_answer` in `evaluation/tasks/seqrecqa.py`: the last <answer>...</answer> must end the
+# Mirrors how the SeqRecQA position benchmark extracts answers: the last <answer>...</answer> must end the
 # completion, its <dna> tags and whitespace are dropped, and `diff` answers are normalised to "POSITION BASE".
 SEQRECQA_POSITION_ANSWER_PATTERN = re.compile(r"<answer>((?:(?!<answer>).)*?)</answer>\s*\Z", re.DOTALL)
 SEQRECQA_POSITION_DNA_TAG_PATTERN = re.compile(r"</?dna>", re.IGNORECASE)

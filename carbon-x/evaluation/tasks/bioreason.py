@@ -124,11 +124,6 @@ def _bioreason_task(config: str, group: str, id_key: str) -> Task:
 
 
 @task
-def bioreason_coding() -> Task:
-    return _bioreason_task("coding", "variant_effect_coding", "ID")
-
-
-@task
 def bioreason_coding_sequence_only() -> Task:
     return _bioreason_task("coding_sequence_only", "coding_sequence_only", "ID")
 
