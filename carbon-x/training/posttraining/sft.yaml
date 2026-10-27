@@ -1,0 +1,41 @@
+# Config for 2 nodes with GBS = 32 (per-device batch 2, accumulation 1)
+model_name_or_path: HuggingFaceBio/Carbon-X-Base
+model_revision: main
+attn_implementation: kernels-community/vllm-flash-attn3
+dataset_name: HuggingFaceBio/FineDNA-SFT
+dataset_num_proc: 12
+assistant_only_loss: true
+bf16: true
+eos_token: <|im_end|>
+gradient_accumulation_steps: 1
+gradient_checkpointing: true
+gradient_checkpointing_kwargs:
+  use_reentrant: false
+hub_model_id: HuggingFaceBio/Carbon-X-SFT-ckpts
+hub_strategy: every_save
+learning_rate: 1.0e-05
+log_level: info
+logging_steps: 1
+logging_strategy: steps
+lr_scheduler_type: cosine_with_min_lr
+lr_scheduler_kwargs:
+  min_lr_rate: 0.1
+max_grad_norm: 0.2
+max_length: 9984
+num_train_epochs: 3
+output_dir: scratch/Carbon-X-SFT-ckpts-v00.00
+packing: false
+train_sampling_strategy: group_by_length
+per_device_train_batch_size: 2
+push_to_hub: true
+report_to:
+- trackio
+run_name: v00.00
+save_strategy: epoch
+save_total_limit: 1
+seed: 42
+trust_remote_code: true
+use_liger_kernel: true
+warmup_steps: 0.03
+trackio_space_id: HuggingFaceBio/carbon-x-experiments
+project: sft

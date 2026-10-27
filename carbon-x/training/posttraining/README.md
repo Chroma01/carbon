@@ -1,0 +1,31 @@
+# Carbon-X post-training
+
+Post-training of the midtrained `HuggingFaceBio/Carbon-X-Base` checkpoint with
+TRL, in two stages:
+
+1. **SFT** on `HuggingFaceBio/FineDNA-SFT`, producing `HuggingFaceBio/Carbon-X-SFT`.
+2. **RL** with verifiable rewards on `HuggingFaceBio/FineDNA-RL`, starting from
+   the SFT checkpoint. Rollouts are generated asynchronously by a vLLM server,
+   and the config is sized for one generation node and one training node. The
+   rewards listed under `reward_funcs` in [`rl.yaml`](rl.yaml) cover
+   mutation-effect prediction, DNA question answering, sequence-position tasks
+   and instruction following, and live in
+   [`src/carbon_x/rewards.py`](../../src/carbon_x/rewards.py).
+
+| File | Contents |
+|---|---|
+| [`sft.py`](sft.py) / [`rl.py`](rl.py) | Training scripts |
+| [`sft.yaml`](sft.yaml) / [`rl.yaml`](rl.yaml) | Training configs |
+| [`sft.slurm`](sft.slurm) / [`rl.slurm`](rl.slurm) | Slurm launchers; for RL, the last node serves vLLM and the rest train |
+| [`accelerate_configs/`](accelerate_configs) | DeepSpeed ZeRO-3 and FSDP2 configs |
+
+Run from the `carbon-x/` directory:
+
+```sh
+# SFT: 2 nodes, global batch size 32, 3 epochs
+sbatch --nodes=2 training/posttraining/sft.slurm --config training/posttraining/sft.yaml --accelerator deepspeed_zero3
+
+# RL
+sbatch --nodes=2 training/posttraining/rl.slurm --config training/posttraining/rl.yaml --accelerator fsdp2 \
+  --vllm_args "data_parallel_size=8 tensor_parallel_size=1 dtype=bfloat16 gpu_memory_utilization=0.85"
+```

@@ -8,6 +8,7 @@ training recipes, and evals. Run commands from inside that directory.
 | Directory | Models | Contents |
 |---|---|---|
 | [`carbon/`](carbon) | [Carbon-500M](https://huggingface.co/HuggingFaceBio/Carbon-500M), [Carbon-3B](https://huggingface.co/HuggingFaceBio/Carbon-3B), [Carbon-8B](https://huggingface.co/HuggingFaceBio/Carbon-8B) | Zero-shot DNA evals, finetuning recipes, embedding analysis |
+| [`carbon-x/`](carbon-x) | [Carbon-X](https://huggingface.co/HuggingFaceBio/Carbon-X) | Midtraining, SFT and RL recipes, DNA understanding evals |
 
 ```bash
 cd carbon
