@@ -2,13 +2,13 @@
 
 The details below are what the published numbers were produced with, so they are not free parameters:
   * rows kept only when the answer text is <= 30 chars and the question contains a run of >= 50 A/C/G/T/N;
-  * the DNA run is truncated to --L characters and tagged on its own, the stem is never tagged;
+  * the DNA run is truncated to --L characters;
   * MCF prompt = "{stem}\\n{seq}\\n{A. opt}...\\nAnswer:" scored against " A", " B", ...;
   * CF prompt   = "{stem}\\n{seq}\\nAnswer:" scored against " {option}", byte-normalised to bits per byte;
   * contexts are tokenized with add_special_tokens=False and the CONCATENATED ids are left-truncated to --maxlen.
 
 Usage:
-  python euk_mcf_cf_vllm.py --model <hf_ckpt> --run-name <label> --out <json> [--tag-dna]
+  python euk_mcf_cf_vllm.py --model <hf_ckpt> --run-name <label> --out <json>
 """
 import argparse, json, math, os, re, sys
 
@@ -18,19 +18,6 @@ import vllm_scoring
 LETTERS = ["A", "B", "C", "D"]
 LN2 = math.log(2)
 SEQ = re.compile(r"[ACGTN]{50,}")
-_T = None
-
-
-def tag(t, en):
-    global _T
-    if not en or not t:
-        return t
-    if _T is None:
-        from tag_dna_sequences import tag_dna_sequences
-        _T = tag_dna_sequences
-    return _T(str(t))[0]
-
-
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", required=True)
@@ -38,7 +25,6 @@ def main():
     ap.add_argument("--out", required=True)
     ap.add_argument("--L", type=int, default=8192)
     ap.add_argument("--maxlen", type=int, default=8192)
-    ap.add_argument("--tag-dna", action="store_true")
     ap.add_argument("--tensor-parallel-size", type=int, default=1)
     ap.add_argument("--gpu-memory-utilization", type=float, default=0.90)
     ap.add_argument("--no-prefix-caching", action="store_true",
@@ -65,7 +51,7 @@ def main():
     tok = AutoTokenizer.from_pretrained(a.model, trust_remote_code=True)
     jobs, rows = [], []     # jobs: (ctx_ids, cont_ids, bytes_or_None)
     for stem, seq, opts, gi in items:
-        s = tag(seq[:a.L], a.tag_dna)
+        s = seq[: a.L]
         base_l = f"{stem}\n{s}\n" + "\n".join(f"{LETTERS[j]}. {o}" for j, o in enumerate(opts)) + "\nAnswer:"
         base_c = f"{stem}\n{s}\nAnswer:"
         l_ids = tok(base_l, add_special_tokens=False).input_ids

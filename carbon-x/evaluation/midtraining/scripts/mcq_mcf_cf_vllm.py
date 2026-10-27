@@ -7,20 +7,18 @@
 Scoring goes through scripts/vllm_scoring.py; see that file for how a scoring-only pass is done on vLLM. Contexts
 are left-truncated with one token reserved (reserve=1), matching the scorer these numbers were first produced with.
 
---tag-dna wraps DNA runs in <dna>...</dna> so a hybrid model routes them down the 6-mer path. Carbon's tokenizer
-inserts those tags itself and does so idempotently, so the flag is a no-op there; leave it off for plain BPE models,
-where the tags would otherwise be scored as literal text.
+DNA is not tagged here: Carbon's tokenizer wraps A/C/G/T runs in <dna>...</dna> itself, and a plain-BPE model has
+no DNA tokens to route to, so the text is scored as it comes.
 
 Usage:
   python mcq_mcf_cf_vllm.py --model-path <hf_ckpt> --run-name <label> --out <json> \\
       --dataset HuggingFaceBio/seqqa-carbon-curated-3tasks --split test --subtask-field subtask \\
-      --tag-dna --max-length 6144
+      --max-length 6144
 """
 import argparse, json, math, os, sys
 from collections import defaultdict
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from hybrid_tag import tag
 import vllm_scoring
 
 LN2 = math.log(2.0)
@@ -60,7 +58,6 @@ def main():
     ap.add_argument("--run-name", required=True)
     ap.add_argument("--out", required=True)
     ap.add_argument("--max-length", type=int, default=6144)
-    ap.add_argument("--tag-dna", action="store_true")
     ap.add_argument("--dataset", default="HuggingFaceBio/seqqa-carbon-curated-3tasks")
     ap.add_argument("--split", default="test")
     ap.add_argument("--subtask-field", default="")
@@ -102,8 +99,8 @@ def main():
         gold = r[a.answer_field]
         gi = int(gold) if str(gold).lstrip("-").isdigit() else LETTERS.index(str(gold).strip().upper())
         sub = (r.get(a.subtask_field, "all") if a.subtask_field else "all")
-        q = tag(str(r[a.question_field]), a.tag_dna)
-        opts_t = [tag(o, a.tag_dna) for o in opts]
+        q = str(r[a.question_field])
+        opts_t = opts
 
         rec = {"sub": sub, "gi": gi, "n_opt": len(opts), "mcf": [], "cf": []}
         mcf_ctx = tok(build_mcf_prompt(q, opts_t, a.prompt_style), add_special_tokens=True)["input_ids"]

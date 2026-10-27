@@ -6,15 +6,11 @@
 #   SR_USE_TAGS=0 SR_GEN_LEN=40 SR_BP_PER_TOKEN=1 SR_NO_PREFIX=1 \
 #     ./run_evals.sh Qwen/Qwen3-14B qwen3-14b                                    # plain-BPE baseline
 #
-# There is deliberately no DNA-tagging switch for the MCQ tasks. Carbon's HybridDNATokenizer inserts <dna> tags
-# itself (auto_dna_tags), and it agrees with the tag_dna_sequences helper on every case we could construct,
-# including the 6 bp threshold and IUPAC runs, where neither tags. Pre-tagging therefore produces byte-identical
-# token ids, and scoring SeqQA and GenomeQA with and without it gives identical numbers. A plain-BPE model gets no
-# tags because nothing inserts them. So both are scored on the text as it comes.
+# The MCQ tasks do not tag DNA: Carbon's tokenizer wraps A/C/G/T runs in <dna>...</dna> itself, and a plain-BPE
+# model has no DNA tokens to route to, so both are scored on the text as it comes.
 #
-# SR_USE_TAGS is a different decision despite the similar name, which is why it survives: it selects the open
-# "<dna>" generation prefix instead of "<s>", changing the continuation setup, so runs with and without it are not
-# comparable. Leave it on for Carbon, set SR_USE_TAGS=0 for a BPE baseline.
+# SR_USE_TAGS is unrelated despite the name: it selects the open "<dna>" generation prefix instead of "<s>", which
+# changes the continuation setup, so runs with and without it are not comparable. On for Carbon, 0 for plain BPE.
 #
 # All scoring runs on vLLM. The scorers in scripts/ are self-contained reimplementations of the MCF/CF primitive
 # and the sequence-recovery metric: no lighteval. Their numbers were checked against the transformers
