@@ -15,8 +15,8 @@
 """
 Run one benchmark inside a Hugging Face Job launched by `evaluate.py`.
 
-Installs the evaluation dependencies, serves `vllm/` models with vLLM, runs the Inspect task, writes `summary.json`
-beside the log and uploads both to the output bucket.
+Installs the evaluation dependencies, serves the model with vLLM for `--backend vllm`, runs the Inspect task, writes
+`summary.json` beside the log and uploads both to the output bucket.
 """
 
 import argparse
@@ -58,6 +58,7 @@ _NO_STDERR = object()
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--model", required=True, help="Inspect model string")
+    parser.add_argument("--backend", choices=["vllm", "endpoint"], required=True)
     parser.add_argument("--output_dir", required=True, help="hf://buckets/... folder for the log and summary")
     parser.add_argument("--eval_kwargs", type=json.loads, required=True, help="JSON keyword arguments for eval()")
     parser.add_argument("--vllm_args", nargs="+", default=[], metavar="KEY=VALUE", help="`vllm serve` arguments")
@@ -242,7 +243,7 @@ def main():
     server = None
     status = None
     try:
-        if args.model.startswith("vllm/"):
+        if args.backend == "vllm":
             repo_id = args.model.removeprefix("vllm/")
             # Download before starting vLLM so the transfer does not count against its startup timeout
             download_weights(repo_id, dict(arg.split("=", 1) for arg in args.vllm_args).get("revision"))

@@ -15,14 +15,15 @@
 """
 Evaluate a model on the five Carbon-X DNA benchmarks with Hugging Face Jobs, one Job per benchmark.
 
-`--model` is an Inspect model string. Hub models (`vllm/<repo_id>`) are served with vLLM on a GPU; any other provider,
-e.g. `anthropic/claude-opus-5-5` or `hf-inference-providers/<repo_id>:<provider>`, is called from a CPU Job. Inspect
-logs and a `summary.json` per benchmark are written to a Storage Bucket.
+With `--backend vllm` (the default), `--model` is a Hub repo ID that is served with vLLM on a GPU Job. With
+`--backend endpoint`, `--model` is an Inspect model string, e.g. `anthropic/claude-opus-5-5` or
+`hf-inference-providers/<repo_id>:<provider>`, that is called from a CPU Job. Inspect logs and a `summary.json` per
+benchmark are written to a Storage Bucket.
 
 Usage:
 
 uv run evaluation/evaluate.py \
-    --model vllm/HuggingFaceBio/Carbon-X-SFT
+    --model HuggingFaceBio/Carbon-X-SFT
 """
 
 import argparse
@@ -37,7 +38,7 @@ from hashlib import sha256
 from pathlib import Path
 
 from huggingface_hub import HfApi, Volume, get_token, hf_hub_download
-from huggingface_hub.errors import EntryNotFoundError
+from huggingface_hub.errors import EntryNotFoundError, HFValidationError
 from huggingface_hub.utils import disable_progress_bars
 
 
@@ -106,28 +107,36 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--model",
         required=True,
-        help="Inspect model string: vllm/<repo_id> for a Hub model, otherwise an endpoint such as anthropic/<model>",
+        help="Hub repo ID for --backend vllm, or an Inspect model string such as anthropic/<model> for endpoint",
     )
-    parser.add_argument("--revision", help="Hub model revision (default: main)")
+    parser.add_argument(
+        "--backend",
+        choices=["vllm", "endpoint"],
+        default="vllm",
+        help="vllm serves a Hub model on a GPU Job; endpoint calls an Inspect model provider from a CPU Job",
+    )
+    parser.add_argument("--revision", help="Hub model revision for vllm (default: main)")
     parser.add_argument("--benchmarks", nargs="+", choices=list(BENCHMARKS), default=list(BENCHMARKS))
     parser.add_argument("--bucket", help=f"Storage Bucket for the logs (default: <hf_user>/{DEFAULT_BUCKET_NAME})")
     parser.add_argument(
-        "--flavor", help=f"Job hardware (default: {DEFAULT_GPU_FLAVOR} for Hub models, {DEFAULT_CPU_FLAVOR} otherwise)"
+        "--flavor", help=f"Job hardware (default: {DEFAULT_GPU_FLAVOR} for vllm, {DEFAULT_CPU_FLAVOR} for endpoint)"
     )
     parser.add_argument("--timeout", default="1d", help="Maximum Job duration, e.g. 6h or 1d")
     parser.add_argument("--limit", type=int, help="Evaluate only the first N samples of each benchmark")
-    parser.add_argument("--max_connections", type=int, help="Concurrent requests (default: 128 for vLLM, else 50)")
-    parser.add_argument("--max_tokens", type=int, help="Default for Hub models: context length minus a prompt margin")
-    parser.add_argument("--temperature", type=float, help="Default for Hub models: generation_config.json")
-    parser.add_argument("--top_p", type=float, help="Default for Hub models: generation_config.json")
-    parser.add_argument("--top_k", type=int, help="Default for Hub models: generation_config.json")
+    parser.add_argument(
+        "--max_connections", type=int, help="Concurrent requests (default: 128 for vllm, 50 for endpoint)"
+    )
+    parser.add_argument("--max_tokens", type=int, help="Default for vllm: context length minus a prompt margin")
+    parser.add_argument("--temperature", type=float, help="Default for vllm: generation_config.json")
+    parser.add_argument("--top_p", type=float, help="Default for vllm: generation_config.json")
+    parser.add_argument("--top_k", type=int, help="Default for vllm: generation_config.json")
     parser.add_argument("--reasoning_effort", help="Forwarded to Inspect and appended to the model's log path")
     parser.add_argument(
         "--chat_template_kwargs",
         type=_json_object,
-        help='JSON object for extra_body.chat_template_kwargs (default for Hub models: {"enable_thinking": false})',
+        help='JSON object for extra_body.chat_template_kwargs (default for vllm: {"enable_thinking": false})',
     )
-    parser.add_argument("--model_base_url", help="Base URL for OpenAI-compatible endpoints")
+    parser.add_argument("--model_base_url", help="Base URL of the endpoint, e.g. an OpenAI-compatible server")
     parser.add_argument(
         "--model_args", nargs="+", type=_model_arg, default=[], metavar="KEY=VALUE", help="Inspect model args (-M)"
     )
@@ -171,8 +180,16 @@ def gpu_count(api: HfApi, flavor: str) -> int:
     if hardware is None:
         raise ValueError(f"Unknown HF Jobs flavor {flavor!r}")
     if hardware.accelerator is None:
-        raise ValueError(f"Hub models are served with vLLM and need a GPU flavor, got {flavor!r}")
+        raise ValueError(f"--backend vllm needs a GPU flavor, got {flavor!r}")
     return int(hardware.accelerator.quantity)
+
+
+def hub_model_exists(api: HfApi, repo_id: str) -> bool:
+    # Inspect model strings such as hf-inference-providers/<org>/<model>:<provider> are not valid repo IDs
+    try:
+        return api.repo_exists(repo_id)
+    except HFValidationError:
+        return False
 
 
 def snapshot_volume(api: HfApi) -> Volume:
@@ -205,10 +222,15 @@ def main():
     api = HfApi(token=token)
     bucket = args.bucket or f"{api.whoami()['name']}/{DEFAULT_BUCKET_NAME}"
 
-    is_vllm = args.model.startswith("vllm/")
-    backend = "vllm" if is_vllm else "endpoint"
+    backend = args.backend
+    is_vllm = backend == "vllm"
+    if is_vllm and args.model_base_url:
+        raise ValueError("--model_base_url only applies to --backend endpoint; vllm serves the model inside the Job")
     if not is_vllm and (args.revision or args.vllm_args):
-        raise ValueError("--revision and --vllm_args only apply to Hub models served with vLLM (vllm/<repo_id>)")
+        raise ValueError("--revision and --vllm_args only apply to --backend vllm")
+    # Inspect's vLLM provider takes vllm/<repo_id>; endpoints use --model as given
+    model_id = args.model.removeprefix("vllm/") if is_vllm else args.model
+    model = f"vllm/{model_id}" if is_vllm else model_id
     flavor = args.flavor or (DEFAULT_GPU_FLAVOR if is_vllm else DEFAULT_CPU_FLAVOR)
     revision = args.revision or "main"
     chat_template_kwargs = args.chat_template_kwargs
@@ -217,7 +239,12 @@ def main():
     vllm_args = {}
     model_args = dict(args.model_args)
     if is_vllm:
-        repo_id = args.model.removeprefix("vllm/")
+        repo_id = model_id
+        if not hub_model_exists(api, repo_id):
+            raise ValueError(
+                f"Could not find the Hub model {repo_id!r}; pass --backend endpoint to evaluate an Inspect model "
+                "such as anthropic/<model>"
+            )
         user_vllm_args = dict(args.vllm_args)
         if "max_model_len" in user_vllm_args:
             max_model_len = int(user_vllm_args["max_model_len"])
@@ -240,7 +267,7 @@ def main():
         model_args.setdefault("client_timeout", INSPECT_LIMITS["vllm"]["timeout"])
     max_connections = args.max_connections or (128 if is_vllm else 50)
 
-    model_log_id = log_model_id(args.model, args.reasoning_effort)
+    model_log_id = log_model_id(model, args.reasoning_effort)
     timestamp = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
     secrets = {"HF_TOKEN": token}
     for name in args.secrets:
@@ -257,7 +284,7 @@ def main():
         if max_tokens is None and max_model_len is not None:
             max_tokens = max_model_len - prompt_margin
         metadata = {
-            "model_id": args.model.removeprefix("vllm/"),
+            "model_id": model_id,
             "revision": revision if is_vllm else None,
             "backend": backend,
             "reasoning_effort": args.reasoning_effort,
@@ -289,7 +316,9 @@ def main():
             "python3",
             f"{JOB_ROOT}/evaluation/job.py",
             "--model",
-            args.model,
+            model,
+            "--backend",
+            backend,
             "--output_dir",
             f"hf://buckets/{bucket}/{output_path}",
             "--eval_kwargs",

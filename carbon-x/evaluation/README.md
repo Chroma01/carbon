@@ -19,34 +19,38 @@ implemented as [Inspect](https://inspect.aisi.org.uk/) tasks in
 per benchmark. Log in with `hf auth login` first. Run from the `carbon-x/` directory:
 
 ```sh
-uv run evaluation/evaluate.py --model vllm/HuggingFaceBio/Carbon-X-SFT
+uv run evaluation/evaluate.py --model HuggingFaceBio/Carbon-X-SFT
 ```
 
-`--model` is an Inspect model string:
+`--backend` sets where the model runs:
 
-- `vllm/<repo_id>` serves a Hub model with vLLM on a GPU Job (`rtx-pro-6000` by default). The defaults reproduce the
-  model card settings: thinking disabled, sampling from the model's `generation_config.json` and one sample per
-  problem. Select a checkpoint with `--revision` and override `vllm serve` options with `--vllm_args`.
-- Any other provider runs on a CPU Job (`cpu-basic` by default) that calls the endpoint. `HF_TOKEN`, together with
-  `OPENAI_API_KEY`, `ANTHROPIC_API_KEY` and `GOOGLE_API_KEY` when they are set locally, is forwarded as a secret.
+- `vllm` (default): `--model` is a Hub repo ID, served with vLLM on a GPU Job (`rtx-pro-6000` by default). The
+  defaults reproduce the model card settings: thinking disabled, sampling from the model's `generation_config.json`
+  and one sample per problem. Select a checkpoint with `--revision` and override `vllm serve` options with
+  `--vllm_args`.
+- `endpoint`: `--model` is an [Inspect model string](https://inspect.aisi.org.uk/models.html), called from a CPU Job
+  (`cpu-basic` by default). `HF_TOKEN`, together with `OPENAI_API_KEY`, `ANTHROPIC_API_KEY` and `GOOGLE_API_KEY` when
+  they are set locally, is forwarded as a secret.
 
 ```sh
 # Smoke test on two benchmarks
-uv run evaluation/evaluate.py --model vllm/HuggingFaceBio/Carbon-X-SFT \
+uv run evaluation/evaluate.py --model HuggingFaceBio/Carbon-X-SFT \
   --benchmarks vepqa_single_1k genomeqa_mcq_carbon \
   --limit 8
 
 # An API model
-uv run evaluation/evaluate.py --model anthropic/claude-opus-5-5 \
+uv run evaluation/evaluate.py --backend endpoint \
+  --model anthropic/claude-opus-5-5 \
   --reasoning_effort low \
   --max_tokens 128000
 
 # A model on Inference Providers
-uv run evaluation/evaluate.py --model hf-inference-providers/Qwen/Qwen3-14B:nscale \
+uv run evaluation/evaluate.py --backend endpoint \
+  --model hf-inference-providers/Qwen/Qwen3-14B:nscale \
   --chat_template_kwargs '{"enable_thinking": false}'
 
 # An OpenAI-compatible endpoint such as a dedicated Inference Endpoint
-CARBON_API_KEY=$(hf auth token) uv run evaluation/evaluate.py \
+CARBON_API_KEY=$(hf auth token) uv run evaluation/evaluate.py --backend endpoint \
   --model openai-api/carbon/HuggingFaceBio/Carbon-X-SFT \
   --model_base_url https://<endpoint>.endpoints.huggingface.cloud/v1 \
   --secrets CARBON_API_KEY \
