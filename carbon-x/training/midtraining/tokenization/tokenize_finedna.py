@@ -3,15 +3,16 @@
 Every source in HuggingFaceBio/FineDNA has the same schema -- `text`, `id`, `source`, `metadata` -- so one script
 covers all 23 of them: DNA, bio text, English and instruction data alike. Run it once per source.
 
-The DNA sources arrive already rendered: the eukaryote text carries its metadata tag and <dna> wrapper
-(`<fungi_species><dna>CTCC...`), mRNA and prokaryote are `<dna>`-wrapped raw sequence. Bio and English text is
+The DNA sources arrive already rendered. Eukaryote rows are <dna>-wrapped, and about half of them also carry a
+metadata tag (`<fungi_species><dna>CTCC...`); training dropped the tags half the time, so the rest are plain
+<dna>...</dna>. mRNA and prokaryote are <dna>-wrapped raw sequence. Bio and English text is
 plain prose. Either way you do not need to tag anything yourself, and tagging again would be harmless: the
 tokenizer inserts <dna> tags where they are missing and is idempotent where they are not.
 
 Set --n_tasks close to the number of input files: datatrove writes one shard per task, so asking for more tasks
 than there are files leaves 0-byte shards that the training blend then has to skip.
 
-    python tokenize.py --input hf://datasets/HuggingFaceBio/FineDNA/data/dna_eukaryote_fungi \
+    python tokenize_finedna.py --input hf://datasets/HuggingFaceBio/FineDNA/data/dna_eukaryote_fungi \
         --output <out>/eukaryote/gener_metadata_fungi_qwen3h_npad \
         --save_name gener_metadata_fungi_qwen3h_npad --n_tasks 16
     # --local runs in this process instead of submitting Slurm jobs; --limit N caps documents PER TASK
@@ -31,7 +32,9 @@ ap = argparse.ArgumentParser()
 ap.add_argument("--input", required=True)
 ap.add_argument("--output", required=True)
 ap.add_argument("--save_name", required=True)
-ap.add_argument("--glob", default="*.parquet")
+ap.add_argument("--glob", default="train-*.parquet",
+                help="seven bio_* subsets also ship validation-*.parquet, the docs held out to track "
+                     "loss, so the default reads only the train shards")
 ap.add_argument("--n_tasks", type=int, default=8)
 ap.add_argument("--tokenizer", default=TOKENIZER)
 ap.add_argument("--log_dir", default="./logs/tokenization")
@@ -121,7 +124,7 @@ if __name__ == "__main__":
         ex = SlurmPipelineExecutor(
             job_name=f"meg-tok-{tag}", pipeline=pipeline,
             tasks=args.n_tasks, time="6:00:00", partition=args.partition,
-            cpus_per_task=24, qos="normal", mem_per_cpu_gb=2,
+            cpus_per_task=24, qos="normal", mem_per_cpu_gb=1,
             logging_dir=f"{args.log_dir}/tokenize_{tag}",
         )
     ex.run()

@@ -6,7 +6,7 @@
 #   55%  Carbon DNA    eukaryote 70 / mRNA 16 / mRNA-splice 4 / prokaryote 10
 #   15%  bio text      p90 7 / rest 7 / synthetic 1
 #   20%  English       FineWeb-Edu 8 / DCLM 8 / FinePDFs-Edu 4
-#   10%  instruction   Nemotron ifchat-v3, reasoning traces preserved
+#   10%  instruction   Nemotron IF-Chat v3 (chat + instruction following) and v2 (chat)
 #
 # Eukaryote weights follow the natural species distribution of the source corpus (vertebrate-other 42%,
 # vertebrate-mammalian 27%, invertebrate 20%, plant 8%, fungi 3%, protozoa 0.5%).
@@ -17,11 +17,17 @@
 # looks correct, so this does not show up unless you check for it here.
 DATA_PATH=""
 add(){ mapfile -t P < <(for f in "$1"/*_tokens.bin; do [ -s "$f" ] && [ -s "${f%.bin}.idx" ] && printf '%s\n' "${f%.bin}"; done)
-  n=${#P[@]}
-  # Fail instead of returning quietly. A missing or index-less source would otherwise drop silently and change the
-  # mixture while the weight sum still looks correct.
-  if [ $n -eq 0 ]; then echo "ERROR: no usable shards in $1 (need non-empty *_tokens.bin with a matching .idx)" >&2; exit 1; fi
-  w=$("${PYBIN:-python3}" -c "print($2/$n)") || { echo "ERROR: weight calc failed for $1" >&2; exit 1; }; for p in "${P[@]}"; do DATA_PATH="$DATA_PATH $w $p"; done; }
+  # Weight each shard by its size rather than splitting a source's weight evenly. The even split matched the
+  # original run's sharding; re-tokenizing FineDNA gives different shard sizes, and an even split would then
+  # over-read the small ones. By size, a source delivers its share whatever --n_tasks you used.
+  if [ ${#P[@]} -eq 0 ]; then echo "ERROR: no usable shards in $1 (need non-empty *_tokens.bin with a matching .idx)" >&2; exit 1; fi
+  W=$("${PYBIN:-python3}" -c "
+import os, sys
+w, paths = float(sys.argv[1]), sys.argv[2:]
+sizes = [os.path.getsize(p + '.bin') for p in paths]
+print(' '.join(f'{w * s / sum(sizes)} {p}' for s, p in zip(sizes, paths)))" "$2" "${P[@]}") \
+    || { echo "ERROR: weight calc failed for $1" >&2; exit 1; }
+  DATA_PATH="$DATA_PATH $W"; }
 
 # 55% DNA, split 70 eukaryote / 16 mRNA / 4 mRNA-splice / 10 prokaryote.
 # Eukaryote weights follow the natural species distribution of the source corpus.

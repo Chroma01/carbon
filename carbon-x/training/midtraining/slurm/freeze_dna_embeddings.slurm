@@ -53,9 +53,10 @@ MEGATRON_PATH="${MEGATRON_PATH:?set MEGATRON_PATH to your Megatron-LM-Carbon che
 TRAINING_SCRIPT="${MEGATRON_PATH}/pretrain_gpt_freeze_body_untied.py"   # shipped alongside this script
 
 TOKENIZER="${TOKENIZER:-HuggingFaceBio/Carbon-X}"
-# This stage uses the 100k-sequence eukaryote SUBSET (~10B tokens), not the full corpus step 5 trains on, so the
-# shard names below carry 100k_. Tokenize it with:
-#   tokenize_eukaryote.py eukaryote_generator_10B_subset/<subset> --save_name gener_metadata_100k_<subset>_qwen3h_npad
+# This stage uses the 100k-sequence eukaryote SUBSET (~10B tokens) from HuggingFaceBio/carbon-pretraining-corpus,
+# which FineDNA does not carry, so the shard names below have the 100k_ prefix. Tokenize it with:
+#   tokenize_finedna.py --input hf://datasets/HuggingFaceBio/carbon-pretraining-corpus/eukaryote_generator_10B_subset/<subset> \
+#       --glob '*.parquet' --save_name gener_metadata_100k_<subset>_qwen3h_npad
 MEG_DATA="${MEG_DATA:?set MEG_DATA to the tokenized 100k eukaryote subset (gener_metadata_100k_*_qwen3h_npad)}"
 PRETRAINED_MEGATRON_CKPT="${PRETRAINED_MEGATRON_CKPT:?set it to the vocab-extended Qwen3-14B-Instruct Megatron checkpoint}"
 SAVE_PATH="${SAVE_PATH:-checkpoints/qwen3-14b-instruct-freeze-body-dna-10B-npad}"

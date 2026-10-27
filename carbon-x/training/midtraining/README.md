@@ -96,8 +96,15 @@ Everything is in one dataset, [`HuggingFaceBio/FineDNA`](https://huggingface.co/
 under `data/<source>/`. All 23 sources share the schema `text`, `id`, `source`, `metadata`, so one script
 tokenizes all of them.
 
-The DNA text arrives already rendered: eukaryote rows carry their metadata tag and `<dna>` wrapper
-(`<fungi_species><dna>CTCC...`), mRNA and prokaryote are `<dna>`-wrapped sequence. Bio and English are plain
+Each subset holds everything the run sampled from for that source, not the full upstream dataset: the DNA is
+GENERator and OpenGenome2 after filtering. The mixture weights are what reproduce the run, so training longer at
+the same weights repeats this data rather than seeing more of it; for more unique DNA, go back to the source
+corpora. Seven `bio_*` subsets also ship `validation-*.parquet`, the documents held out to track loss, which is
+why the tokenizer defaults to `--glob 'train-*.parquet'`.
+
+The DNA text arrives already rendered. Eukaryote rows are `<dna>`-wrapped, and about half also carry a metadata
+tag (`<fungi_species><dna>CTCC...`): training dropped the tags half the time, so the rest are plain
+`<dna>...</dna>`. mRNA and prokaryote are `<dna>`-wrapped sequence. Bio and English are plain
 prose, which the tokenizer tags itself. FineDNA also ships the filtering and tagging code that produced this under
 `pipeline/`, if you want to see how the text was built.
 
@@ -133,10 +140,11 @@ python tokenization/tokenize_finedna.py \
 The script refuses to write into a directory that already holds shards of the same name, so this fails loudly
 rather than quietly costing you two thirds of the instruction data.
 
-Step 4 trains on a smaller eukaryote set: tokenize those sources again as
-`gener_metadata_100k_<subset>_qwen3h_npad`, with `--n_tasks` of fungi 10, invertebrate 10, plant 10, protozoa 4,
-vertebrate_mammalian 20, vertebrate_other 30. `slurm/freeze_dna_embeddings.slurm` lists each shard index, so those
-counts have to match.
+Step 4 does not read FineDNA. The freeze stage trained on `eukaryote_generator_10B_subset` from
+[`HuggingFaceBio/carbon-pretraining-corpus`](https://huggingface.co/datasets/HuggingFaceBio/carbon-pretraining-corpus),
+a ~10B-token cut that FineDNA does not carry. Tokenize it as `gener_metadata_100k_<subset>_qwen3h_npad` with
+`--n_tasks` of fungi 10, invertebrate 10, plant 10, protozoa 4, vertebrate_mammalian 20, vertebrate_other 30;
+`slurm/freeze_dna_embeddings.slurm` lists each shard index, so those counts have to match.
 
 ### Running the tokenizer
 
@@ -175,7 +183,7 @@ Three checks catch most of it.
 | 55% | Carbon DNA: eukaryote 70 / mRNA 16 / mRNA-splice 4 / prokaryote 10 |
 | 15% | bio text: p90 7 / rest 7 / synthetic 1 |
 | 20% | English: FineWeb-Edu 8 / DCLM 8 / FinePDFs-Edu 4 |
-| 10% | Nemotron ifchat-v3 instruction SFT, reasoning traces preserved |
+| 10% | Nemotron IF-Chat v3 (chat + instruction following) and v2 (chat), reasoning traces preserved |
 
 Eukaryote weights follow the natural species distribution of the source corpus (vertebrate-other 42%,
 vertebrate-mammalian 27%, invertebrate 20%, plant 8%, fungi 3%, protozoa 0.5%). The exact per-source weights are in
