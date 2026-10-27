@@ -1,5 +1,9 @@
 # Carbon-X evaluation
 
+These are the post-training benchmarks. The separate suite used to track *midtraining*, before the model was
+post-trained, is in [`midtraining/`](midtraining): SeqQA, GenomeQA eukaryote classification, sequence recovery,
+MMLU-Pro biology, HellaSwag and OpenBookQA, scored by logprob rather than by generation.
+
 The five DNA benchmarks from the
 [release blog post](https://huggingface.co/spaces/HuggingFaceBio/Carbon-X-Release),
 implemented as [Inspect](https://inspect.aisi.org.uk/) tasks in

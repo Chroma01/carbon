@@ -11,6 +11,11 @@ readme = "README.md"
 dependencies = [
   "accelerate==1.13.0",
   "datasets>=4.7.0",
+  # declared explicitly: it was previously only pulled in transitively by the rl/sft groups, so a tokenization-only
+  # install silently had no torch
+  "torch>=2.6.0",
+  # tokenization of the midtraining corpora (training/midtraining/tokenization)
+  "datatrove[io,processing]>=0.7.0",
   "huggingface-hub[hf_xet]>=1.27.0",
   "pandas",
   "safetensors",
