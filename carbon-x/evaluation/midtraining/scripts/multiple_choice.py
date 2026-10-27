@@ -4,14 +4,14 @@
   CF  = cloze: score each option text as a continuation of "Question ...\\nAnswer: ", take the lowest
         bits-per-byte (summed NLL / (utf8 bytes * ln2)).
 
-Scoring goes through scripts/vllm_scoring.py; see that file for how a scoring-only pass is done on vLLM. Contexts
+Scoring goes through scripts/scoring.py; see that file for how a scoring-only pass is done on vLLM. Contexts
 are left-truncated with one token reserved (reserve=1), matching the scorer these numbers were first produced with.
 
 DNA is not tagged here: Carbon's tokenizer wraps A/C/G/T runs in <dna>...</dna> itself, and a plain-BPE model has
 no DNA tokens to route to, so the text is scored as it comes.
 
 Usage:
-  python mcq_mcf_cf_vllm.py --model-path <hf_ckpt> --run-name <label> --out <json> \\
+  python multiple_choice.py --model-path <hf_ckpt> --run-name <label> --out <json> \\
       --dataset HuggingFaceBio/seqqa-carbon-curated-3tasks --split test --subtask-field subtask \\
       --max-length 6144
 """
@@ -19,7 +19,7 @@ import argparse, json, math, os, sys
 from collections import defaultdict
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import vllm_scoring
+import scoring
 
 LN2 = math.log(2.0)
 LETTERS = [chr(ord("A") + i) for i in range(12)]
@@ -122,9 +122,9 @@ def main():
             rec["cf"].append(len(jobs)); jobs.append((cf_ctx, cont, len(o.encode("utf-8"))))
         rows.append(rec)
 
-    llm = vllm_scoring.build_llm(a.model_path, a.max_length, a.tensor_parallel_size, a.gpu_memory_utilization,
+    llm = scoring.build_llm(a.model_path, a.max_length, a.tensor_parallel_size, a.gpu_memory_utilization,
                                  prefix_caching=not a.no_prefix_caching)
-    nll = vllm_scoring.score(llm, [(c, k) for c, k, _ in jobs], a.max_length, reserve=1)
+    nll = scoring.score(llm, [(c, k) for c, k, _ in jobs], a.max_length, reserve=1)
 
     agg = defaultdict(lambda: [0, 0, 0])
     for rec in rows:
@@ -144,7 +144,7 @@ def main():
     json.dump(out, open(a.out, "w"), indent=1)
     print(f"{a.run_name}: AVG mcf={tm/tn:.3f} cf={tc/tn:.3f} | " +
           " ".join(f"{k.split('-v1')[0]}:m{v[0]/v[2]:.3f}/c{v[1]/v[2]:.3f}" for k, v in agg.items()), flush=True)
-    vllm_scoring.shutdown(llm)
+    scoring.shutdown(llm)
 
 
 if __name__ == "__main__":

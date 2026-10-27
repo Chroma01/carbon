@@ -8,12 +8,12 @@ The details below are what the published numbers were produced with, so they are
   * contexts are tokenized with add_special_tokens=False and the CONCATENATED ids are left-truncated to --maxlen.
 
 Usage:
-  python euk_mcf_cf_vllm.py --model <hf_ckpt> --run-name <label> --out <json>
+  python genomeqa_eukaryote.py --model <hf_ckpt> --run-name <label> --out <json>
 """
 import argparse, json, math, os, re, sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import vllm_scoring
+import scoring
 
 LETTERS = ["A", "B", "C", "D"]
 LN2 = math.log(2)
@@ -66,9 +66,9 @@ def main():
         rows.append(rec)
 
     # the reference truncates the CONCATENATED ids from the left, with nothing reserved, hence reserve=0
-    llm = vllm_scoring.build_llm(a.model, a.maxlen, a.tensor_parallel_size, a.gpu_memory_utilization,
+    llm = scoring.build_llm(a.model, a.maxlen, a.tensor_parallel_size, a.gpu_memory_utilization,
                                  prefix_caching=not a.no_prefix_caching)
-    nll = vllm_scoring.score(llm, [(c, k) for c, k, _ in jobs], a.maxlen, reserve=0)
+    nll = scoring.score(llm, [(c, k) for c, k, _ in jobs], a.maxlen, reserve=0)
 
     mcf_ok, cf_ok = [], []
     for rec in rows:
@@ -83,7 +83,7 @@ def main():
     os.makedirs(os.path.dirname(os.path.abspath(a.out)), exist_ok=True)
     json.dump(out, open(a.out, "w"), indent=2)
     print(f"{a.run_name}: MCF={out['mcf']:.3f} CF={out['cf']:.3f} n={out['n']}", flush=True)
-    vllm_scoring.shutdown(llm)
+    scoring.shutdown(llm)
 
 
 if __name__ == "__main__":

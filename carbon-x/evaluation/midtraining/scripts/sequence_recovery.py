@@ -1,7 +1,7 @@
 """
 Usage:
   Legacy fixed-window scoring (preserves the original --gen_len 5 metric):
-    uv run --project evaluation python evaluation/sequence_recovery_eval.py \
+    python sequence_recovery.py \
       --model HuggingFaceBio/carbon-3B-600B-dna-generv2-fp32-lmhead \
       --model_name 3B-WITH-TAGS \
       --data_type eukaryote \
@@ -15,7 +15,7 @@ Usage:
       --use_dna_tags
 
   Long-rollout scoring (scores the generated window and derives a tail label when needed):
-    uv run --project evaluation python evaluation/sequence_recovery_eval.py \
+    python sequence_recovery.py \
       --model HuggingFaceBio/carbon-3B-600B-dna-generv2-fp32-lmhead \
       --model_name 3B-WITH-TAGS \
       --data_type eukaryote \

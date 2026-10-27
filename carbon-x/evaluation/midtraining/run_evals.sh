@@ -71,7 +71,7 @@ if [ "${RUN_DNA:-1}" = "1" ]; then
 # common 2048 default truncates them, costing that task about 25 points.
 if want seqqa "$OUT/seqqa_$LABEL.json"; then
 echo "== [$LABEL] SeqQA (3 curated tasks)"
-$PY "$SELF/mcq_mcf_cf_vllm.py" --model-path "$MODEL" --run-name "$LABEL" \
+$PY "$SELF/multiple_choice.py" --model-path "$MODEL" --run-name "$LABEL" \
   --dataset HuggingFaceBio/seqqa-carbon-curated-3tasks --split test --subtask-field subtask \
   --max-length 6144 --out "$OUT/seqqa_$LABEL.json" || true
 check seqqa "$OUT/seqqa_$LABEL.json"
@@ -79,7 +79,7 @@ fi
 
 if want euk "$OUT/euk_$LABEL.json"; then
 echo "== [$LABEL] GenomeQA eukaryote classification"
-$PY "$SELF/euk_mcf_cf_vllm.py" --model "$MODEL" --run-name "$LABEL" --out "$OUT/euk_$LABEL.json" || true
+$PY "$SELF/genomeqa_eukaryote.py" --model "$MODEL" --run-name "$LABEL" --out "$OUT/euk_$LABEL.json" || true
 check euk "$OUT/euk_$LABEL.json"
 fi
 
@@ -90,7 +90,7 @@ fi
 if want sequence_recovery "$OUT/${LABEL}_*.json"; then
 echo "== [$LABEL] sequence recovery"
 SR_PREFIX_FLAG=""; [ "${SR_NO_PREFIX:-0}" = "1" ] && SR_PREFIX_FLAG="--no_prefix"
-$PY "$SELF/sequence_recovery_eval.py" --model "$MODEL" --model_name "$LABEL" \
+$PY "$SELF/sequence_recovery.py" --model "$MODEL" --model_name "$LABEL" \
   --use_vllm $SR_TAG_FLAG $SR_PREFIX_FLAG --gen_len "${SR_GEN_LEN:-8}" --bp_per_token "${SR_BP_PER_TOKEN:-6}" \
   --data_path "${SR_DATA:-hf://datasets/GenerTeam/sequence-recovery}" --data_type eukaryote \
   --max_samples "${SR_SAMPLES:-2000}" \
@@ -106,7 +106,7 @@ fi
 if [ "${RUN_ENGLISH:-1}" = "1" ]; then
   if want mmlu_pro "$OUT/mmlu_pro_$LABEL.json"; then
   echo "== [$LABEL] MMLU-Pro biology"
-  $PY "$SELF/mcq_mcf_cf_vllm.py" --model-path "$MODEL" --run-name "$LABEL" \
+  $PY "$SELF/multiple_choice.py" --model-path "$MODEL" --run-name "$LABEL" \
     --dataset TIGER-Lab/MMLU-Pro --split test \
     --filter-field category --filter-value biology --prompt-style lighteval \
     --question-field question --options-field options --answer-field answer_index \
@@ -116,7 +116,7 @@ if [ "${RUN_ENGLISH:-1}" = "1" ]; then
 
   if want openbookqa "$OUT/openbookqa_$LABEL.json"; then
   echo "== [$LABEL] OpenBookQA"
-  $PY "$SELF/mcq_mcf_cf_vllm.py" --model-path "$MODEL" --run-name "$LABEL" \
+  $PY "$SELF/multiple_choice.py" --model-path "$MODEL" --run-name "$LABEL" \
     --dataset allenai/openbookqa:main --split test \
     --question-field question_stem --options-field choices --answer-field answerKey --prompt-style lighteval \
     --max-length 2048 --out "$OUT/openbookqa_$LABEL.json" || true
@@ -125,7 +125,7 @@ if [ "${RUN_ENGLISH:-1}" = "1" ]; then
 
   if want hellaswag "$OUT/hellaswag_$LABEL.json"; then
   echo "== [$LABEL] HellaSwag"
-  $PY "$SELF/mcq_mcf_cf_vllm.py" --model-path "$MODEL" --run-name "$LABEL" \
+  $PY "$SELF/multiple_choice.py" --model-path "$MODEL" --run-name "$LABEL" \
     --dataset Rowan/hellaswag --split validation \
     --question-field ctx --options-field endings --answer-field label \
     --cf-style completion \
