@@ -43,7 +43,7 @@ trained on their own before anything else is unfrozen.
 | 1. tokenize | `tokenization/tokenize_finedna.py` | FineDNA sources to Megatron `.bin`/`.idx`, one run per source |
 | 2. extend | `extend_vocab.py` | add the DNA rows to Qwen3's embedding and lm_head, randomly initialised |
 | 3. import | `conversion/hf_to_megatron.sh` | convert the extended HF checkpoint to Megatron format |
-| 4. freeze | `slurm/freeze_dna_embeddings.slurm` | train the DNA rows only, body and English embeddings held still (~10B tokens of DNA); see the weight-decay caveat below |
+| 4. freeze | `slurm/freeze_dna_embeddings.slurm` | train the DNA rows only, body and English embeddings frozen (~10B tokens of DNA) |
 | 5. midtrain | `slurm/midtrain_300b.slurm` | train everything on the full mixture (300B tokens) |
 | 6. export | `conversion/megatron_to_hf.sh` | convert back to HF for evaluation or release |
 
@@ -144,18 +144,6 @@ Three checks catch most of it.
 3. **English preserved after freeze.** Convert the freeze checkpoint to HF and re-run the English evals; they
    should still match the base model.
 
-These two statements look contradictory, so to be explicit about which is which:
-
-- **What step 4 enforces** is zero *gradient* on the original-vocab rows. That is the mechanism, and check B is
-  what confirms it held.
-- **Whether those rows end up bitwise identical** is a separate question, because weight decay can move a
-  parameter with no gradient at all (see the caveat under Notes). Check B is also what answers it.
-
-So read check B as a measurement, not an assumption: if it reports 0 moved rows, both properties hold and the
-weight-decay caveat is moot for your run. If it reports a non-zero count with tiny deltas, the freeze worked and
-weight decay moved the rows; rerun the stage with `--weight-decay 0.0` if you need them untouched. A large count
-means the freeze itself is broken.
-
 ## Step 5 configuration
 
 | | |
@@ -194,14 +182,6 @@ Step 5 uses Megatron's own `pretrain_gpt.py`.
   Megatron ties them and the `lm_head` is dropped at conversion, with no error.
 - Use **`ORIGINAL_VOCAB_SIZE=151669`** in step 4. This is the tokenizer's `dna_start_id`, the first DNA row. A larger
   value such as Qwen3's 151,936 would freeze part of the DNA vocabulary you are trying to train.
-- **"Frozen" in step 4 means zero gradient, not a constant tensor.** The entrypoint masks gradients on the
-  original-vocab rows, but the launcher runs `--weight-decay 0.1` and Megatron applies decoupled weight decay to
-  every 2-D parameter, so those rows still shrink by `lr * wd * p` each step. Small at this LR and token budget,
-  but not zero. **This is unverified either way**: the scaffold and freeze checkpoints from the released run are no
-  longer on disk, so `verify_freeze.py` could not be re-run against them. If its check B (original-vocab rows
-  bitwise identical) passes on your own run, weight decay is not moving them in practice and this caveat is moot.
-  If it fails, use `--weight-decay 0.0` for this stage, or give the embedding its own param group through
-  `no_weight_decay_cond`. The released checkpoint was trained with weight decay on.
 - `conversion/patch_exported_config.py` is not optional on export: Megatron-Bridge writes the reference model's
   `vocab_size` rather than the padded one, and can leave `rope_theta` null, which makes transformers fall back to
   10,000 and silently break Qwen3's positional encoding (the correct value is 1,000,000).

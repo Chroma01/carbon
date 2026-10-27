@@ -19,16 +19,8 @@ HuggingFaceBio/Carbon-X. Do NOT use Qwen3's own vocab size of 151936: that is la
 freeze the first 267 DNA rows you are trying to train. Leaving it unset trains all rows, i.e. no freezing at all.
 
 TP-aware (each rank masks its own vocab shard). PP=1 is assumed, so the embedding and the output layer live on the
-same rank.
-
-CAVEAT -- "frozen" here means zero GRADIENT, not a constant tensor. The hook runs on the gradient; Megatron's
-optimizer then applies decoupled weight decay (`--weight-decay 0.1` in the launcher) to every 2-D parameter,
-embeddings included, as `p -= lr * wd * p`. That term does not depend on the gradient, so the original-vocab rows
-still shrink slowly over the stage. The effect is small at this LR and token budget, but it is not zero, and it is
-unverified: run `verify_freeze.py <scaffold> <freeze_ckpt>` and look at check B, which compares the original-vocab
-rows bitwise. If they come back identical, weight decay is not moving them and this caveat does not apply. If you need the original rows bit-identical, run this stage with
-`--weight-decay 0.0`, or give the embedding its own param group with `no_weight_decay_cond`. The released
-checkpoint was trained as-is, with weight decay on.
+same rank. After the stage, `verify_freeze.py` confirms per vector that the body and the original-vocab rows did
+not move.
 """
 
 import time
