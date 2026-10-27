@@ -113,11 +113,25 @@ prose, which the tokenizer tags itself. FineDNA also ships the filtering and tag
 | 8% | `english_fineweb_edu` | `$ENGLISH_DIR/fwedu_100B_megatron_qwen3h` |
 | 8% | `english_dclm` | `$ENGLISH_DIR/dclm_100B_megatron_qwen3h` |
 | 4% | `english_finepdfs_edu` | `$ENGLISH_DIR/finepdfs_edu_100B_megatron_qwen3h` |
-| 10% | `instruct_nemotron_{chat_v3,if_v2,if_v3}` | `$ENGLISH_DIR/sft_nemotron_ifchat_v3_qwen3h_npad` (all three into one directory) |
+| 10% | `instruct_nemotron_{chat_v3,if_v2,if_v3}` | `$ENGLISH_DIR/sft_nemotron_ifchat_v3_qwen3h_npad`, in **one** run, see below |
 
 The launchers glob these paths exactly, and the names do not match their sources (`dna_mrna` becomes
 `mrna_pure_*`, the English ones have no `_npad`), so copy them as written.
 [`configs/mixture_300b.sh`](configs/mixture_300b.sh) is the source of truth.
+
+The three instruction sources share one output directory, so tokenize them in a single run with a glob that spans
+them, not a loop. datatrove keys its completion markers on the output path, so a second run into the same directory
+finds the first run's state, skips, and exits cleanly having written nothing:
+
+```bash
+python tokenization/tokenize_finedna.py \
+    --input hf://datasets/HuggingFaceBio/FineDNA/data --glob 'instruct_nemotron_*/*.parquet' \
+    --output $ENGLISH_DIR/sft_nemotron_ifchat_v3_qwen3h_npad \
+    --save_name sft_nemotron_ifchat_v3_qwen3h_npad --n_tasks 54
+```
+
+The script refuses to write into a directory that already holds shards of the same name, so this fails loudly
+rather than quietly costing you two thirds of the instruction data.
 
 Step 4 trains on a smaller eukaryote set: tokenize those sources again as
 `gener_metadata_100k_<subset>_qwen3h_npad`, with `--n_tasks` of fungi 10, invertebrate 10, plant 10, protozoa 4,

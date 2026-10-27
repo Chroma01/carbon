@@ -17,6 +17,7 @@ than there are files leaves 0-byte shards that the training blend then has to sk
     # --local runs in this process instead of submitting Slurm jobs; --limit N caps documents PER TASK
 """
 import argparse
+import os
 from datatrove.executor import SlurmPipelineExecutor
 from datatrove.pipeline.readers import ParquetReader
 from datatrove.pipeline.tokens.megatron_tokenizer import MegatronDocumentTokenizer
@@ -36,6 +37,7 @@ ap.add_argument("--tokenizer", default=TOKENIZER)
 ap.add_argument("--log_dir", default="./logs/tokenization")
 ap.add_argument("--partition", default="hopper-cpu")
 ap.add_argument("--limit", type=int, default=-1, help="stop after N documents (-1 = all); for smoke tests")
+ap.add_argument("--overwrite", action="store_true", help="replace existing shards of the same save_name")
 ap.add_argument("--local", action="store_true", help="run locally (LocalPipelineExecutor) instead of submitting Slurm jobs")
 args = ap.parse_args()
 
@@ -86,6 +88,19 @@ class HybridMegatronTokenizer(MegatronDocumentTokenizer):
 if __name__ == "__main__":
     # logging_dir MUST be unique per output (train vs val share save_name!) or datatrove's
     # executor-state cache collides and both jobs run the same (last-submitted) config.
+    # datatrove keys its completion markers on logging_dir, which is derived from --output below. Two runs with the
+    # same --output therefore share state: the second finds the first's markers, skips, exits 0 and writes nothing.
+    # Reading several sources into one directory has to be a single run with a glob that spans them, not a loop.
+    import glob as _glob
+    existing = _glob.glob(os.path.join(args.output, f"{args.save_name}_*_tokens.bin"))
+    if existing and not args.overwrite:
+        raise SystemExit(
+            f"ERROR: {args.output} already holds {len(existing)} shard(s) named {args.save_name}_*.\n"
+            f"  A second run with the same --output and --save_name would silently skip (shared datatrove state)\n"
+            f"  or overwrite those shards. To read several sources into one directory, use ONE run with a glob that\n"
+            f"  spans them, e.g. --input .../data --glob 'instruct_nemotron_*/*.parquet'.\n"
+            f"  Pass --overwrite if you really mean to replace them."
+        )
     tag = "_".join(args.output.rstrip("/").split("/")[-2:])
     print(f"INPUT={args.input}\nOUTPUT={args.output}\nsave_name={args.save_name} n_tasks={args.n_tasks} tag={tag} local={args.local}")
     pipeline=[
