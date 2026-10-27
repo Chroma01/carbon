@@ -23,10 +23,12 @@ accelerate launch --config_file training/posttraining/accelerate_configs/deepspe
 
 import logging
 import sys
+from pathlib import Path
 
 import datasets
 import transformers
 from transformers import set_seed
+from transformers.trainer_utils import get_last_checkpoint
 from trl import ModelConfig, ScriptArguments, SFTTrainer, TrlParser, get_peft_config
 
 from carbon_x.callbacks import LogTrainingSamplesCallback
@@ -34,7 +36,6 @@ from carbon_x.configs import SFTConfig
 from carbon_x.hub import cleanup_output_dir
 from carbon_x.logging import init_trackio_training
 from carbon_x.model_utils import get_model, get_tokenizer
-from carbon_x.sft_utils import load_sft_datasets, resolve_checkpoint
 
 
 logger = logging.getLogger(__name__)
@@ -64,7 +65,13 @@ def main(script_args, training_args, model_args):
     logger.info(f"Training parameters {training_args}")
 
     # Check for last checkpoint
-    checkpoint = resolve_checkpoint(training_args)
+    checkpoint = training_args.resume_from_checkpoint
+    if (
+        checkpoint is None
+        and not getattr(training_args, "overwrite_output_dir", False)
+        and Path(training_args.output_dir).is_dir()
+    ):
+        checkpoint = get_last_checkpoint(training_args.output_dir)
     if checkpoint:
         logger.info("Resuming training from %s", checkpoint)
 
@@ -74,7 +81,16 @@ def main(script_args, training_args, model_args):
     ################
     # Load datasets
     ################
-    train_dataset, eval_dataset = load_sft_datasets(script_args, training_args)
+    dataset_kwargs = {
+        "path": script_args.dataset_name,
+        "name": script_args.dataset_config,
+        "streaming": script_args.dataset_streaming,
+    }
+    train_dataset = datasets.load_dataset(**dataset_kwargs, split=script_args.dataset_train_split)
+    eval_dataset = None
+    if training_args.eval_strategy != "no" or training_args.do_eval:
+        eval_dataset = datasets.load_dataset(**dataset_kwargs, split=script_args.dataset_test_split)
+
     ################
     # Load tokenizer
     ################

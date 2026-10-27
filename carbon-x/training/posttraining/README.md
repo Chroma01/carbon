@@ -115,18 +115,6 @@ To repeat only resume/reload validation against a completed checkpoint 2, set
 `CARBON_SMOKE_RESUME_ONLY=1` before submitting the smoke job. Each job snapshots
 its launcher so edits to the checkout cannot change a running shell script.
 
-Local checks use a tiny randomly initialized model for CPU training and the real
-tokenizer/data for preprocessing:
-
-```sh
-python -m unittest discover -s tests -v
-# Include real tokenizer/data and CPU train/save/resume checks (requires Hub access):
-CARBON_SFT_INTEGRATION=1 python -m unittest discover -s tests -v
-# Before the upstream EOS fix is merged, validate its revision explicitly:
-CARBON_SFT_INTEGRATION=1 CARBON_SFT_MODEL_REVISION=refs/pr/2 python -m unittest discover -s tests -v
-bash -n training/posttraining/sft.slurm training/posttraining/sft_smoke.slurm
-```
-
 ### RL
 
 Install the RL dependency group before using this launcher. RL validation is a
