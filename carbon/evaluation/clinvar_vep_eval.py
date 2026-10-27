@@ -229,9 +229,9 @@ def _evo2_shard(args):
     os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
 
     import torch
-    from evo2_runtime import preload_cudnn_libraries
+    from evo2_runtime import setup_evo2_runtime
 
-    preload_cudnn_libraries()
+    setup_evo2_runtime()
     from evo2 import Evo2
     from evo2.scoring import prepare_batch
 
@@ -263,9 +263,9 @@ def _evo2_shard(args):
 
 def _compute_probs_evo2_model_parallel(sequences, refs, alts, model_name: str, batch_size: int):
     """Evo2 scoring path for models that need all visible GPUs."""
-    from evo2_runtime import preload_cudnn_libraries
+    from evo2_runtime import setup_evo2_runtime
 
-    preload_cudnn_libraries()
+    setup_evo2_runtime()
     from evo2 import Evo2
     from evo2.scoring import prepare_batch
 

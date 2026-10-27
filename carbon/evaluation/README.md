@@ -354,25 +354,22 @@ done
 ```
 ## Environment
 
-Install the root project environment with uv:
+Install the environment with uv from the `carbon/` directory. `uv sync`
+includes the `evaluation` dependency group by default:
 
 ```bash
-# Core dependencies only
 uv sync
-
-# Core plus evaluation dependencies
-uv sync --group evaluation
 ```
 
-**Evo2 backend** — the official [evo2](https://github.com/ArcInstitute/evo2)
-install needs CUDA 12.1+, Python 3.11/3.12, and matching `flash-attn` +
-`transformer-engine` builds for your PyTorch. Follow their install guide
-first, then layer any additional pins on top with uv:
+**Evo2 backend** — also install the `evo2` dependency group:
 
 ```bash
-uv pip install -r requirements-evo2.txt
+uv sync --group evo2
 ```
 
-We use a separate venv for Evo2 in practice because the `flash-attn` and
-`transformer-engine` wheels are tightly tied to a specific torch + CUDA
-build.
+This compiles `transformer-engine-torch` from source against the locked
+PyTorch, so it needs `nvcc` from a CUDA toolkit matching PyTorch's CUDA build
+(we use `CUDA_HOME=/usr/local/cuda-12.8`). FlashAttention is not installed:
+the Evo2 runtime loads the prebuilt
+[`kernels-community/flash-attn2`](https://huggingface.co/kernels-community/flash-attn2)
+kernel from the Hub on first use, so jobs need Hub access or a warm cache.

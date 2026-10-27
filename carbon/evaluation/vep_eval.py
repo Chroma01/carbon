@@ -220,9 +220,9 @@ def score_hf(df: pd.DataFrame, args) -> tuple[np.ndarray, np.ndarray]:
 
 def score_evo2(df: pd.DataFrame, args) -> tuple[np.ndarray, np.ndarray]:
     """Single-GPU full-sequence LL via the official Evo2 library."""
-    from evo2_runtime import preload_cudnn_libraries
+    from evo2_runtime import setup_evo2_runtime
 
-    preload_cudnn_libraries()
+    setup_evo2_runtime()
     from evo2 import Evo2
 
     model = Evo2(args.model.split("/")[-1])

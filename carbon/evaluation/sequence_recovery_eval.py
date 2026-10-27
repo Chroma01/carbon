@@ -731,9 +731,9 @@ def _evo2_model_name(model_arg: str) -> str:
 
 def process_data_evo2(sequences_data, args):
     try:
-        from evo2_runtime import preload_cudnn_libraries
+        from evo2_runtime import setup_evo2_runtime
 
-        preload_cudnn_libraries()
+        setup_evo2_runtime()
         from evo2 import Evo2
     except Exception as e:
         raise RuntimeError(

@@ -19,7 +19,8 @@ dependencies = [
 packages = []
 
 [tool.uv]
-no-build-isolation-package = ["flash-attn"]
+# Compile source builds (e.g. transformer-engine-torch) against the locked torch.
+build-constraint-dependencies = ["torch==2.10.0"]
 default-groups = ["evaluation", "finetuning", "analysis"]
 
 [dependency-groups]
@@ -31,7 +32,7 @@ evaluation = [
 ]
 evo2 = [
   "evo2==0.5.5",
-  "flash-attn==2.8.0.post2",
+  "kernels>=0.14.1",
   "onnx>=1.21.0",
   "transformer-engine[core-cu12,pytorch]==2.13.0",
 ]

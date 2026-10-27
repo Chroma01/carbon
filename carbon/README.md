@@ -54,6 +54,10 @@ For Evo2-backed evaluation, also install the Evo2 dependency group:
 uv sync --group evo2
 ```
 
+This compiles Transformer Engine from source, so it needs a CUDA toolkit
+matching PyTorch's CUDA 12.8 build (`CUDA_HOME=/usr/local/cuda-12.8`). See
+[evaluation/README.md](evaluation/README.md#environment) for details.
+
 To install a single group only, e.g. for finetuning:
 
 ```bash

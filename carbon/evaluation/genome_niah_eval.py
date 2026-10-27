@@ -382,9 +382,9 @@ def _unwrap(out):
 
 def evo2_eval(args, df) -> pd.DataFrame:
     """Generation only — Evo2 LL path is too expensive at long ctx (no separate body call)."""
-    from evo2_runtime import preload_cudnn_libraries
+    from evo2_runtime import setup_evo2_runtime
 
-    preload_cudnn_libraries()
+    setup_evo2_runtime()
     from evo2 import Evo2
     model_name = args.model.split("/")[-1]
     print(f"Loading Evo2 model: {model_name}")
