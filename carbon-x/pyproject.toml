@@ -10,14 +10,13 @@ requires-python = ">=3.12,<3.13"
 readme = "README.md"
 dependencies = [
   "accelerate==1.13.0",
-  "datasets>=4.0.0",
+  "datasets>=4.7.0",
   "huggingface-hub[hf_xet]>=1.27.0",
   "pandas",
   "safetensors",
   "trackio>=0.42.0",
   "transformers[kernels]==5.12.1",
-  # TODO: pin to a release with `trl.experimental.async_grpo`
-  "trl",
+  "trl==1.16.0",
 ]
 
 [tool.setuptools.packages.find]
