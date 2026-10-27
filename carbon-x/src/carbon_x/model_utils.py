@@ -17,6 +17,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, PreTrainedTokenize
 from trl import ModelConfig, get_quantization_config
 
 from .configs import SFTConfig
+from .tokenizer import HybridDNATokenizer
 
 
 def get_tokenizer(model_args: ModelConfig, training_args: SFTConfig) -> PreTrainedTokenizer:
@@ -26,6 +27,15 @@ def get_tokenizer(model_args: ModelConfig, training_args: SFTConfig) -> PreTrain
         revision=model_args.model_revision,
         trust_remote_code=training_args.trust_remote_code,
     )
+
+    if type(tokenizer).__name__ == "HybridDNATokenizer":
+        # The released wrapper does not persist SFT's EOS override. Use the
+        # compatible local implementation, which is copied into saved checkpoints.
+        tokenizer = HybridDNATokenizer.from_pretrained(
+            model_args.model_name_or_path,
+            revision=model_args.model_revision,
+            trust_remote_code=training_args.trust_remote_code,
+        )
 
     if training_args.chat_template is not None:
         tokenizer.chat_template = training_args.chat_template

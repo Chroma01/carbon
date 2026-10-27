@@ -20,13 +20,17 @@ This directory contains the training recipe and evals for
 
 ## Installation
 
-Run all commands from this directory:
+Run all commands from this directory. To install the SFT dependencies:
 
 ```sh
 cd carbon-x
-uv sync
+uv sync --locked --no-default-groups --group sft
 source .venv/bin/activate
 ```
+
+Plain `uv sync` also installs the RL and evaluation groups. See
+[`training/posttraining/`](training/posttraining) for SFT launch, smoke-test,
+and checkpoint resume commands.
 
 ## Layout
 
@@ -38,6 +42,7 @@ carbon-x/
 │   ├── hub.py
 │   ├── logging.py            # Trackio setup
 │   ├── model_utils.py
+│   ├── tokenizer.py          # hybrid tokenizer with checkpoint serialization fixes
 │   ├── rewards.py            # verifiable rewards for RL
 │   ├── vepqa_claims.py       # groundedness checks against the input sequence
 │   └── dna_skills/           # verifiers for DNA skill tasks

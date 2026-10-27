@@ -1,6 +1,7 @@
 # Config for 2 nodes with GBS = 32 (per-device batch 2, accumulation 1)
 model_name_or_path: HuggingFaceBio/Carbon-X-Base
 model_revision: main
+dtype: bfloat16
 attn_implementation: kernels-community/vllm-flash-attn3
 dataset_name: HuggingFaceBio/FineDNA-SFT
 dataset_num_proc: 12

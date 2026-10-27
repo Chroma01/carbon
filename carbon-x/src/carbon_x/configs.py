@@ -40,7 +40,10 @@ class SFTConfig(ConfigMixin, trl.SFTConfig):
     SFT config that adds chat template and Trackio fields on top of TRL's SFT config.
     """
 
-    pass
+    cleanup_after_push: bool = field(
+        default=False,
+        metadata={"help": "Delete local outputs after a successful Hub push. Disabled to retain resumable checkpoints."},
+    )
 
 
 @dataclass
