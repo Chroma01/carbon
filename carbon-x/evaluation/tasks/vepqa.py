@@ -37,7 +37,7 @@ from inspect_ai.solver import TaskState, generate
 
 
 DATASET_PATH = "HuggingFaceBio/DNAIntelligenceIndex"
-DATASET_REVISION = "872f12bf811f1945949e628c89e06821f804c9ae"
+DATASET_REVISION = "afbcf9022f581d92ab697ce5c8dfe65359e4ae5f"
 FAMILIES = {
     "coding_only": {"nonsense", "missense_variant", "synonymous_variant", "initiator_codon_variant", "stop_lost"},
     "canonical_splice_only": {"splice_acceptor_variant", "splice_donor_variant"},
@@ -278,7 +278,7 @@ def vepqa_scorer() -> Scorer:
 def vepqa_single_1k() -> Task:
     dataset = hf_dataset(
         path=DATASET_PATH,
-        name="frontiervep",
+        name="frontier_vep",
         split="train",
         revision=DATASET_REVISION,
         sample_fields=record_to_sample,

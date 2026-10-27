@@ -13,7 +13,7 @@ with one subset per benchmark.
 | BioReason Non-SNV | [`bioreason.py@bioreason_non_snv`](tasks/bioreason.py) | `bioreason_non_snv` |
 | GenomeQA | [`genomeqa.py@genomeqa_mcq_carbon`](tasks/genomeqa.py) | `genomeqa` |
 | NextBase | [`seqrecqa.py@seqrecqa_varlen`](tasks/seqrecqa.py) | `nextbase` |
-| FrontierVEP | [`vepqa.py@vepqa_single_1k`](tasks/vepqa.py) | `frontiervep` |
+| FrontierVEP | [`vepqa.py@vepqa_single_1k`](tasks/vepqa.py) | `frontier_vep` |
 
 ## Run on Hugging Face Jobs
 
