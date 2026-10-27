@@ -3,15 +3,17 @@
 The five DNA benchmarks from the
 [release blog post](https://huggingface.co/spaces/HuggingFaceBio/Carbon-X-Release),
 implemented as [Inspect](https://inspect.aisi.org.uk/) tasks in
-[`tasks/`](tasks).
+[`tasks/`](tasks). Their data is the
+[`HuggingFaceBio/DNAIntelligenceIndex`](https://huggingface.co/datasets/HuggingFaceBio/DNAIntelligenceIndex) dataset,
+with one subset per benchmark.
 
-| Benchmark | Inspect task | Dataset |
+| Benchmark | Inspect task | Subset |
 |---|---|---|
-| BioReason Coding | [`bioreason.py@bioreason_coding_sequence_only`](tasks/bioreason.py) | `HuggingFaceBio/bioreason_vep` |
-| BioReason Non-SNV | [`bioreason.py@bioreason_non_snv`](tasks/bioreason.py) | `HuggingFaceBio/bioreason_vep` |
-| GenomeQA | [`genomeqa.py@genomeqa_mcq_carbon`](tasks/genomeqa.py) | `HuggingFaceBio/genomeqa` |
-| NextBase | [`seqrecqa.py@seqrecqa_varlen`](tasks/seqrecqa.py) | `HuggingFaceBio/sequence-recovery-qa` (`varlen`) |
-| FrontierVEP | [`vepqa.py@vepqa_single_1k`](tasks/vepqa.py) | `HuggingFaceBio/vepqa` (`binary_single_1k`) |
+| BioReason Coding | [`bioreason.py@bioreason_coding_sequence_only`](tasks/bioreason.py) | `bioreason_coding` |
+| BioReason Non-SNV | [`bioreason.py@bioreason_non_snv`](tasks/bioreason.py) | `bioreason_non_snv` |
+| GenomeQA | [`genomeqa.py@genomeqa_mcq_carbon`](tasks/genomeqa.py) | `genomeqa` |
+| NextBase | [`seqrecqa.py@seqrecqa_varlen`](tasks/seqrecqa.py) | `nextbase` |
+| FrontierVEP | [`vepqa.py@vepqa_single_1k`](tasks/vepqa.py) | `frontiervep` |
 
 ## Run on Hugging Face Jobs
 

@@ -36,8 +36,8 @@ from inspect_ai.scorer import (
 from inspect_ai.solver import TaskState, generate
 
 
-DATASET_PATH = "HuggingFaceBio/vepqa"
-DATASET_REVISION = "a94c567c8d96717f367867010513691bf6eba9f4"
+DATASET_PATH = "HuggingFaceBio/DNAIntelligenceIndex"
+DATASET_REVISION = "aebffe19836c2fdeaabb73627793bf3d2c089dc8"
 FAMILIES = {
     "coding_only": {"nonsense", "missense_variant", "synonymous_variant", "initiator_codon_variant", "stop_lost"},
     "canonical_splice_only": {"splice_acceptor_variant", "splice_donor_variant"},
@@ -106,17 +106,11 @@ def classify_consequence_terms(raw_terms: list[str], sample_id: str) -> tuple[st
 def record_to_sample(record: dict[str, Any]) -> Sample:
     _, subgroup = classify_consequence_terms(record["consequence_terms"], record["id"])
     return Sample(
-        input=record["question"] + "\n\n" + record["prompt_suffix"],
+        input=record["prompt"],
         target=record["answer_text"],
         id=record["id"],
         metadata={
-            "tag": "binary",
-            "config": "binary_single_1k",
-            "label_binary": record["label_binary"],
-            "group": record["region_group"],
-            "subtype": record["region_subtype"],
-            "region_group": record["region_group"],
-            "region_subtype": record["region_subtype"],
+            "label_binary": record["answer_text"].removeprefix("<answer>").removesuffix("</answer>"),
             "subgroup": subgroup,
         },
     )
@@ -284,8 +278,8 @@ def vepqa_scorer() -> Scorer:
 def vepqa_single_1k() -> Task:
     dataset = hf_dataset(
         path=DATASET_PATH,
-        name="binary_single_1k",
-        split="test",
+        name="frontiervep",
+        split="train",
         revision=DATASET_REVISION,
         sample_fields=record_to_sample,
     )

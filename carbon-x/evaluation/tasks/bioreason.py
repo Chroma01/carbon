@@ -24,23 +24,22 @@ from inspect_ai.solver import generate
 from vepqa import vepqa_class_metrics, vepqa_scorer
 
 
-# Built from the BioReason test splits of wanglab/variant_effect_coding and wanglab/variant_effect_non_snv. The coding
-# and non_snv test splits keep every source row. coding_sequence_only asks every coding variant one fixed question and
-# keeps one row per sequence pair, because the source coding questions name the gene only for pathogenic variants and
-# use disjoint templates per label, so their wording gives the label away.
-DATASET_PATH = "HuggingFaceBio/bioreason_vep"
-DATASET_REVISION = "0ea8494057caeb5b526f58e35488c93076f4cd46"
+# Built from the BioReason test splits of wanglab/variant_effect_coding and wanglab/variant_effect_non_snv.
+# bioreason_non_snv keeps every source row. bioreason_coding asks every coding variant one fixed question and keeps
+# one row per sequence pair, because the source coding questions name the gene only for pathogenic variants and use
+# disjoint templates per label, so their wording gives the label away.
+DATASET_PATH = "HuggingFaceBio/DNAIntelligenceIndex"
+DATASET_REVISION = "aebffe19836c2fdeaabb73627793bf3d2c089dc8"
 
 
-def record_to_sample(record: dict[str, Any], group: str, id_key: str) -> Sample:
+def record_to_sample(record: dict[str, Any], group: str) -> Sample:
     return Sample(
         input=record["question"],
         target=record["answer_text"],
-        id=str(record[id_key]),
+        id=str(record["id"]),
         metadata={
             "label_binary": record["answer_text"].removeprefix("<answer>").removesuffix("</answer>"),
             "group": group,
-            "source_answer": record["answer"],
         },
     )
 
@@ -106,13 +105,13 @@ def macro_f1() -> Metric:
     return summarize
 
 
-def _bioreason_task(config: str, group: str, id_key: str) -> Task:
+def _bioreason_task(config: str, group: str) -> Task:
     dataset = hf_dataset(
         path=DATASET_PATH,
         name=config,
-        split="test",
+        split="train",
         revision=DATASET_REVISION,
-        sample_fields=lambda record: record_to_sample(record, group, id_key),
+        sample_fields=lambda record: record_to_sample(record, group),
     )
     return Task(
         dataset=dataset,
@@ -125,9 +124,9 @@ def _bioreason_task(config: str, group: str, id_key: str) -> Task:
 
 @task
 def bioreason_coding_sequence_only() -> Task:
-    return _bioreason_task("coding_sequence_only", "coding_sequence_only", "ID")
+    return _bioreason_task("bioreason_coding", "coding_sequence_only")
 
 
 @task
 def bioreason_non_snv() -> Task:
-    return _bioreason_task("non_snv", "variant_effect_non_snv", "__index_level_0__")
+    return _bioreason_task("bioreason_non_snv", "variant_effect_non_snv")

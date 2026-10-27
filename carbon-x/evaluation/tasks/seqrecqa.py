@@ -21,8 +21,8 @@ from inspect_ai.scorer import Score, Scorer, Target, accuracy, scorer, stderr
 from inspect_ai.solver import TaskState, generate
 
 
-DATASET_PATH = "HuggingFaceBio/sequence-recovery-qa"
-DATASET_REVISION = "15e4bc594304bcfd97f814671bf66e7d4ee87f8c"
+DATASET_PATH = "HuggingFaceBio/DNAIntelligenceIndex"
+DATASET_REVISION = "aebffe19836c2fdeaabb73627793bf3d2c089dc8"
 # A DNA sequence, optionally in <dna> tags, that ends the completion
 _FINAL_SEQUENCE_PATTERN = re.compile(
     r"(?:<dna>\s*(?P<tagged>[ACGT]+)\s*</dna>|(?:\A|\n)[ \t]*(?P<bare>[ACGT]+))[\W_]*\Z", re.IGNORECASE
@@ -69,8 +69,8 @@ def variable_length_accuracy_scorer() -> Scorer:
 def seqrecqa_varlen() -> Task:
     dataset = hf_dataset(
         path=DATASET_PATH,
-        name="varlen",
-        split="test",
+        name="nextbase",
+        split="train",
         revision=DATASET_REVISION,
         sample_fields=record_to_sample,
     )

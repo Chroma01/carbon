@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import json
 from typing import Any
 
 from inspect_ai import Task, task
@@ -23,8 +22,8 @@ from inspect_ai.solver import multiple_choice
 from metrics import equal_weight_group_stderr
 
 
-DATASET_PATH = "HuggingFaceBio/genomeqa"
-DATASET_REVISION = "f504767e8eba9d46b1390a642b207519828d1468"
+DATASET_PATH = "HuggingFaceBio/DNAIntelligenceIndex"
+DATASET_REVISION = "aebffe19836c2fdeaabb73627793bf3d2c089dc8"
 
 
 def record_to_sample(record: dict[str, Any]) -> Sample:
@@ -33,7 +32,7 @@ def record_to_sample(record: dict[str, Any]) -> Sample:
         choices=record["options"],
         target="ABCD"[record["answer_index"]],
         id=f"{record['subtask']}-{record['id']}",
-        metadata={**json.loads(record["metadata"]), "subtask": record["subtask"]},
+        metadata={"subtask": record["subtask"]},
     )
 
 
@@ -41,7 +40,7 @@ def record_to_sample(record: dict[str, Any]) -> Sample:
 def genomeqa_mcq_carbon() -> Task:
     dataset = hf_dataset(
         path=DATASET_PATH,
-        name="mcq_carbon",
+        name="genomeqa",
         split="train",
         revision=DATASET_REVISION,
         sample_fields=record_to_sample,
