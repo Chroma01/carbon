@@ -1,6 +1,6 @@
-"""GenomeQA eukaryote classification, MCF + CF, scored with vLLM. Drop-in replacement for euk_mcf_cf.py.
+"""GenomeQA eukaryote classification, MCF + CF, scored with vLLM.
 
-Mirrors the transformers implementation exactly so the numbers reproduce:
+The details below are what the published numbers were produced with, so they are not free parameters:
   * rows kept only when the answer text is <= 30 chars and the question contains a run of >= 50 A/C/G/T/N;
   * the DNA run is truncated to --L characters and tagged on its own, the stem is never tagged;
   * MCF prompt = "{stem}\\n{seq}\\n{A. opt}...\\nAnswer:" scored against " A", " B", ...;

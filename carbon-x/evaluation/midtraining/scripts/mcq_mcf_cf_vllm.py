@@ -1,11 +1,11 @@
-"""MCF + CF accuracy on a multiple-choice set, scored with vLLM. Drop-in replacement for mcq_mcf_cf.py.
+"""MCF + CF accuracy on a multiple-choice set, scored with vLLM.
 
   MCF = letter-argmax: score " A", " B", ... as continuations of the option list, take the highest logprob.
   CF  = cloze: score each option text as a continuation of "Question ...\\nAnswer: ", take the lowest
         bits-per-byte (summed NLL / (utf8 bytes * ln2)).
 
 Scoring goes through scripts/vllm_scoring.py; see that file for how a scoring-only pass is done on vLLM. Contexts
-are left-truncated exactly as the transformers implementation does (reserve=1), so the two agree.
+are left-truncated with one token reserved (reserve=1), matching the scorer these numbers were first produced with.
 
 --tag-dna wraps DNA runs in <dna>...</dna> so a hybrid model routes them down the 6-mer path. Carbon's tokenizer
 inserts those tags itself and does so idempotently, so the flag is a no-op there; leave it off for plain BPE models,

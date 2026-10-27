@@ -41,10 +41,9 @@ def score(llm, pairs, max_len, reserve=0):
     """pairs: list of (context_ids, continuation_ids). Returns the summed NLL of each continuation, in nats.
 
     The context is left-truncated, never the continuation, so the scored tokens are always the full continuation.
-    `reserve` is how many extra token slots the transformers implementation being reproduced left free: its
-    mcq scorer keeps `max_length - len(cont) - 1` context tokens (reserve=1) and its GenomeQA scorer truncates the
-    concatenation to `maxlen` with nothing reserved (reserve=0). The two differ by a single context token on the rows
-    that actually overflow, so each scorer passes the value its reference used.
+    `reserve` is how many extra token slots to leave free, which differs by task for historical reasons: the MCQ
+    scorer keeps `max_length - len(cont) - 1` context tokens (reserve=1), the GenomeQA scorer truncates the
+    concatenation to `maxlen` with nothing reserved (reserve=0). It only matters on rows that actually overflow.
     """
     from vllm import SamplingParams
     from vllm.inputs import TokensPrompt
