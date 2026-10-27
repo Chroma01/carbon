@@ -1,8 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=carbon-x-sft
 #SBATCH --ntasks-per-node=1
-#SBATCH --cpus-per-task=64
-#SBATCH --exclusive
+#SBATCH --cpus-per-gpu=10
 #SBATCH --gres=gpu:8
 #SBATCH --partition=hopper-b300,hopper-atl,hopper-prod  # Adjust this for your cluster
 #SBATCH --output=logs/%x-%j.out
@@ -11,6 +10,7 @@
 #SBATCH --time=3-00:00:00
 
 # Run from the carbon-x/ directory after `uv sync`.
+# On this cluster, run `venv-ship .venv` after installing dependencies.
 # Usage:
 #   sbatch --nodes=2 training/posttraining/sft.slurm --config training/posttraining/sft.yaml --accelerator deepspeed_zero3
 set -euo pipefail
@@ -38,9 +38,12 @@ if [[ -z "$CONFIG_FILE" || -z "$ACCELERATOR" ]]; then
 fi
 
 module load cuda/13.0
+source "$(venv-load .venv)"
 export TORCH_NCCL_ASYNC_ERROR_HANDLING=1
 export ACCELERATE_LOG_LEVEL=info
 export TRANSFORMERS_VERBOSITY=info
+# Keep generated kernels local to each node.
+export TRITON_CACHE_DIR="/tmp/triton-$USER-$SLURM_JOB_ID"
 
 NUM_NODES=$SLURM_NNODES
 GPUS_PER_NODE=${SLURM_GPUS_ON_NODE:-8}
@@ -50,8 +53,9 @@ MASTER_ADDR=${NODELIST[0]}
 MASTER_PORT=${MASTER_PORT:-6000}
 
 # Expand the machine rank inside each Slurm task.
-srun --wait=60 --kill-on-bad-exit=1 --nodes="$NUM_NODES" --ntasks="$NUM_NODES" \
-  bash -c 'exec .venv/bin/accelerate launch --machine_rank "$SLURM_PROCID" "$@"' _ \
+srun --cpus-per-gpu="$SLURM_CPUS_PER_GPU" \
+  --wait=60 --kill-on-bad-exit=1 --nodes="$NUM_NODES" --ntasks="$NUM_NODES" \
+  bash -c 'exec accelerate launch --machine_rank "$SLURM_PROCID" "$@"' _ \
   --config_file "training/posttraining/accelerate_configs/$ACCELERATOR.yaml" \
   --num_machines "$NUM_NODES" --num_processes "$WORLD_SIZE" \
   --main_process_ip "$MASTER_ADDR" --main_process_port "$MASTER_PORT" \
