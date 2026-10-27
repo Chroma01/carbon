@@ -20,16 +20,13 @@ This directory contains the training recipe and evals for
 
 ## Installation
 
-Run all commands from this directory. To install the SFT dependencies:
+Run commands from `carbon-x/`. Install dependencies with:
 
 ```sh
-cd carbon-x
-uv sync --locked --no-default-groups --group sft
-source .venv/bin/activate
+uv sync
 ```
 
-Plain `uv sync` also installs the RL and evaluation groups. See
-[`training/posttraining/`](training/posttraining) for SFT launch, smoke-test,
+See [`training/posttraining/`](training/posttraining) for SFT launch, smoke-test,
 and checkpoint resume commands.
 
 ## Layout

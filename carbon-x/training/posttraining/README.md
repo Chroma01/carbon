@@ -19,12 +19,10 @@ TRL, in two stages:
 | [`sft.slurm`](sft.slurm) / [`rl.slurm`](rl.slurm) | Slurm launchers; for RL, the last node serves vLLM and the rest train |
 | [`accelerate_configs/`](accelerate_configs) | DeepSpeed ZeRO-3 and FSDP2 configs |
 
-Run commands from the `carbon-x/` directory. For SFT, install only the core and
-SFT dependencies (the RL and evaluation groups are not required):
+Run commands from the `carbon-x/` directory. Install dependencies with:
 
 ```sh
-uv sync --locked --no-default-groups --group sft
-source .venv/bin/activate
+uv sync
 ```
 
 The released model and dataset require a Hugging Face login with access to
@@ -117,8 +115,7 @@ its launcher so edits to the checkout cannot change a running shell script.
 
 ### RL
 
-Install the RL dependency group before using this launcher. RL validation is a
-separate follow-up.
+RL validation is a separate follow-up.
 
 ```sh
 # RL
