@@ -33,7 +33,6 @@ from trl import ModelConfig, ScriptArguments, SFTTrainer, TrlParser, get_peft_co
 
 from carbon_x.callbacks import LogTrainingSamplesCallback
 from carbon_x.configs import SFTConfig
-from carbon_x.hub import cleanup_output_dir
 from carbon_x.logging import init_trackio_training
 from carbon_x.model_utils import get_model, get_tokenizer
 
@@ -164,15 +163,7 @@ def main(script_args, training_args, model_args):
     #############
     if training_args.push_to_hub:
         logger.info("Pushing to hub...")
-        push_error = None
-        try:
-            trainer.push_to_hub(**kwargs)
-        except Exception as error:
-            push_error = error
-        if training_args.cleanup_after_push:
-            cleanup_output_dir(training_args, push_succeeded=push_error is None)
-        if push_error is not None:
-            raise push_error
+        trainer.push_to_hub(**kwargs)
 
 
 if __name__ == "__main__":

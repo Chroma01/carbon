@@ -83,8 +83,7 @@ sbatch --nodes=1 training/posttraining/sft.slurm \
 
 Without an explicit resume argument, training resumes the latest checkpoint in
 `output_dir`. Use a new output directory for a fresh run. Local outputs are
-retained after publishing; `--cleanup_after_push true` opts into deleting them
-after a successful push.
+retained after publishing.
 
 Dataset split selectors such as `--dataset_train_split 'train[:32]'` work.
 Evaluation loads `dataset_test_split` only when `eval_strategy` or `do_eval`
