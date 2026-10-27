@@ -41,7 +41,14 @@ rl = [
   "nltk==3.9.2",
   "verifiable-instructions @ git+https://github.com/abukharin-nv/verifiable-instructions.git@f46a5ac87b1400a4f8973039844b6be9b56e3faf",
 ]
+# Installed on its own in HF Jobs evals, so it lists everything the Inspect tasks need. GPU jobs reuse vLLM from the
+# vllm/vllm-openai image and the rl group pins it for local runs.
 evaluation = [
+  "datasets>=4.7.0",
+  "huggingface-hub[hf_xet]>=1.27.0",
   "inspect-ai>=0.3.272",
-  "vllm==0.25.1",
+  # Inspect model providers
+  "anthropic",
+  "google-genai",
+  "openai>=2.40.0",
 ]
