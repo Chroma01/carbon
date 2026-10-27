@@ -21,30 +21,17 @@ Megatron is configured through CLI flags, so the launchers in `slurm/` are also 
 
 ## Requirements
 
-Two different environments:
+Steps 1-2 and the evaluations run in the repo's own Python 3.12 environment: `uv sync` from `carbon-x/`, or
+`uv sync --no-default-groups` if you only need to tokenize. No GPU is needed for steps 1-2.
 
-**Steps 1-2 (tokenization, vocabulary extension) and all of `../../evaluation/midtraining`** run in the repo's
-own Python 3.12 environment: `uv sync` from `carbon-x/`. No GPU is needed for steps 1-2; the evaluations need one.
+Steps 3-6 need [Megatron-LM](https://github.com/NVIDIA/Megatron-LM),
+[Megatron-Bridge](https://github.com/NVIDIA/Megatron-Bridge) and Transformer Engine, which you provide: they depend
+on your CUDA and driver versions, so install them per their own instructions. We ran them inside NVIDIA's NeMo
+26.02 container, which has all three. Copy `pretrain_gpt_freeze_body_untied.py` into your Megatron checkout for
+step 4.
 
-Be aware that `uv sync` installs the whole project, because `[tool.uv] default-groups` includes the post-training
-and evaluation groups: roughly 286 packages and ~9 GB, including vLLM, DeepSpeed, flashinfer CUDA cubins and two
-git dependencies. Measured here: 37 minutes on a 28-core node, and still unfinished at 40 minutes on a 9-core one,
-so give it cores and run it in a batch job rather than interactively.
-
-If you only want to tokenize, `uv sync --no-default-groups` installs just the base set (`datatrove`, `torch`,
-`transformers`, `datasets`), which is all steps 1-2 need and is far quicker.
-
-**Steps 3-6 (import, freeze, midtrain, export)** need an environment you provide, with
-[Megatron-LM](https://github.com/NVIDIA/Megatron-LM), [Megatron-Bridge](https://github.com/NVIDIA/Megatron-Bridge)
-and Transformer Engine. These are not in `pyproject.toml` because they depend on your CUDA and driver versions, so
-pinning them here would be wrong for most people; install them per their own instructions. We ran these steps
-inside NVIDIA's NeMo 26.02 container, which already contains all three, but that is what we used, not a
-requirement. The only file you add to that environment is `pretrain_gpt_freeze_body_untied.py`, copied into the
-Megatron checkout for step 4.
-
-The conversion scripts patch Megatron-Bridge's source in place and default to its path inside the NeMo container
-(`/opt/Megatron-Bridge/src`). Outside the container, set `BRIDGE_SRC=/path/to/Megatron-Bridge/src`, or
-`APPLY_BRIDGE_PATCHES=0` if your version no longer needs the patches.
+The conversion scripts patch Megatron-Bridge in place at its container path (`/opt/Megatron-Bridge/src`).
+Elsewhere, set `BRIDGE_SRC`, or `APPLY_BRIDGE_PATCHES=0` if your version no longer needs the patches.
 
 ## The pipeline
 
@@ -128,28 +115,25 @@ prose, which the tokenizer tags itself. FineDNA also ships the filtering and tag
 | 4% | `english_finepdfs_edu` | `$ENGLISH_DIR/finepdfs_edu_100B_megatron_qwen3h` |
 | 10% | `instruct_nemotron_{chat_v3,if_v2,if_v3}` | `$ENGLISH_DIR/sft_nemotron_ifchat_v3_qwen3h_npad` (all three into one directory) |
 
-`slurm/midtrain_300b.slurm` globs these paths, so a shard in the wrong place is simply not found and the mixture
-aborts with "no usable shards". The names are historical and do not match their sources (`dna_mrna` becomes
-`mrna_pure_*`, the English ones have no `_npad`); copy them exactly, and treat
-[`configs/mixture_300b.sh`](configs/mixture_300b.sh) as the source of truth.
+The launchers glob these paths exactly, and the names do not match their sources (`dna_mrna` becomes
+`mrna_pure_*`, the English ones have no `_npad`), so copy them as written.
+[`configs/mixture_300b.sh`](configs/mixture_300b.sh) is the source of truth.
 
-**Step 4 uses a smaller eukaryote set than step 5** and depends on the shard count, because
-`slurm/freeze_dna_embeddings.slurm` lists each shard index explicitly: tokenize the eukaryote sources again with
-`--save_name gener_metadata_100k_<subset>_qwen3h_npad` and `--n_tasks` of fungi 10, invertebrate 10, plant 10,
-protozoa 4, vertebrate_mammalian 20, vertebrate_other 30. A different count leaves a shard it expects missing, and
-Megatron dies at startup looking like a hang.
+Step 4 trains on a smaller eukaryote set: tokenize those sources again as
+`gener_metadata_100k_<subset>_qwen3h_npad`, with `--n_tasks` of fungi 10, invertebrate 10, plant 10, protozoa 4,
+vertebrate_mammalian 20, vertebrate_other 30. `slurm/freeze_dna_embeddings.slurm` lists each shard index, so those
+counts have to match.
 
 ### Running the tokenizer
 
-It **submits Slurm jobs by default**, with this cluster's partitions baked in; pass `--local` to run in the current
-process instead. `--limit N` caps documents **per task**, so `--n_tasks 2 --limit 200` reads 400. `--output` and
-`--log_dir` default to relative paths, i.e. into this checkout if you run from here. The full mixture is multiple
-terabytes, so tokenize a subset with `--limit` and check the shards before committing to it.
+It submits Slurm jobs by default, with this cluster's partitions baked in; `--local` runs in the current process
+instead. `--limit N` caps documents per task. `--output` and `--log_dir` are relative by default, so set them
+outside the checkout. The full mixture is multiple terabytes: tokenize a subset with `--limit` first.
 
-## Checking the pipeline before you trust it
+## Checking the pipeline
 
-Conversion and freezing both fail quietly: a wrong flag gives you a model that loads, trains and evaluates, just
-worse. Three checks catch almost everything.
+Conversion and freezing fail quietly: a wrong flag gives you a model that loads, trains and evaluates, just worse.
+Three checks catch most of it.
 
 1. **Round-trip conversion, no training.** HF to Megatron and back, then run the English evals on the
    round-tripped model and confirm they match the original HF model. Any gap is a conversion bug.

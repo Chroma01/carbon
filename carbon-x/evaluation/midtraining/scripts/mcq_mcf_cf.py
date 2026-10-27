@@ -2,16 +2,20 @@
   MCF = letter-argmax (predict the option letter with highest logprob).
   CF  = pick the option with the lowest answer bits-per-byte (cloze / likelihood).
 Reports per-subtask + AVG. Self-contained: only torch / transformers / datasets + local hybrid_tag.
-WARNING: this is a standalone reimplementation of the lighteval MCF primitive (letter-argmax logprob).
-Its MCF scores SHOULD MATCH lighteval's MCF — sanity-check they agree on one checkpoint before trusting.
+This is the reference implementation that mcq_mcf_cf_vllm.py reproduces; keep the two in step.
 --tag-dna wraps DNA runs (>=6 A/C/G/T) in <dna>...</dna> at eval time, so a HYBRID model routes them
 through the 6-mer path (matches training). Leave OFF for BPE models.
 
 Usage:
   python mcq_mcf_cf.py --model-path <hf_ckpt> --run-name <label> --out <json> \
-      --dataset HuggingFaceBio/seqqa-carbon-curated-v2 --subtask-field subtask --tag-dna --max-length 6144
+      --dataset HuggingFaceBio/seqqa-carbon-curated-3tasks --split test --subtask-field subtask --max-length 6144
 """
-import argparse, json, os, math, sys
+import argparse
+import json
+import math
+import os
+import sys
+
 import torch
 from datasets import load_dataset
 from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -62,8 +66,10 @@ def mcf_predict(model, tok, prompt, n_options, max_length, device):
     return best_i
 
 ap = argparse.ArgumentParser()
-ap.add_argument("--model-path", required=True); ap.add_argument("--run-name", required=True)
-ap.add_argument("--out", required=True); ap.add_argument("--max-length", type=int, default=6144)
+ap.add_argument("--model-path", required=True)
+ap.add_argument("--run-name", required=True)
+ap.add_argument("--out", required=True)
+ap.add_argument("--max-length", type=int, default=6144)
 ap.add_argument("--tag-dna", action="store_true")
 ap.add_argument("--dataset", default="HuggingFaceBio/seqqa-carbon-curated-v2")
 ap.add_argument("--subtask-field", default="")
@@ -81,7 +87,8 @@ a = ap.parse_args()
 dev = "cuda" if torch.cuda.is_available() else "cpu"
 tok = AutoTokenizer.from_pretrained(a.model_path, trust_remote_code=True)
 model = AutoModelForCausalLM.from_pretrained(a.model_path, trust_remote_code=True, dtype=torch.bfloat16).to(dev).eval()
-_p = a.dataset.split(":"); ds = load_dataset(_p[0], _p[1] if len(_p) > 1 else None, split=a.split)
+_p = a.dataset.split(":")
+ds = load_dataset(_p[0], _p[1] if len(_p) > 1 else None, split=a.split)
 
 if a.filter_field:
     before = len(ds)
@@ -100,7 +107,8 @@ for r in ds:
     gi = (int(gold) if str(gold).lstrip("-").isdigit()
           else LETTERS.index(str(gold).strip().upper()))
     sub = (r.get(a.subtask_field, "all") if a.subtask_field else "all")
-    q = tag(str(r[a.question_field]), a.tag_dna); opts_t = [tag(o, a.tag_dna) for o in opts]
+    q = tag(str(r[a.question_field]), a.tag_dna)
+    opts_t = [tag(o, a.tag_dna) for o in opts]
     mpred = mcf_predict(model, tok, build_mcf_prompt(q, opts_t, include_question=True), len(opts), a.max_length, dev)
     ctx = q + "\nAnswer: "
     bpbs = []
@@ -108,13 +116,18 @@ for r in ds:
         res = continuation_nll(model, tok, ctx, ot, a.max_length, dev)
         bpbs.append(res[0] / (len(o.encode("utf-8")) * LN2) if res else float("inf"))
     cpred = min(range(len(bpbs)), key=lambda i: bpbs[i])
-    agg[sub][0] += int(mpred == gi); agg[sub][1] += int(cpred == gi); agg[sub][2] += 1
+    agg[sub][0] += int(mpred == gi)
+    agg[sub][1] += int(cpred == gi)
+    agg[sub][2] += 1
 
 out = {"run": a.run_name, "subtasks": {}}
 for sub, (mc, cf, n) in agg.items():
     out["subtasks"][sub] = {"mcf": mc / n, "cf": cf / n, "n": n}
-tot_n = sum(v[2] for v in agg.values()); tot_m = sum(v[0] for v in agg.values()); tot_c = sum(v[1] for v in agg.values())
+tot_n = sum(v[2] for v in agg.values())
+tot_m = sum(v[0] for v in agg.values())
+tot_c = sum(v[1] for v in agg.values())
 out["AVG"] = {"mcf": tot_m / tot_n, "cf": tot_c / tot_n, "n": tot_n}
-os.makedirs(os.path.dirname(a.out), exist_ok=True); json.dump(out, open(a.out, "w"), indent=1)
+os.makedirs(os.path.dirname(a.out), exist_ok=True)
+json.dump(out, open(a.out, "w"), indent=1)
 print(f"{a.run_name}: AVG mcf={tot_m/tot_n:.3f} cf={tot_c/tot_n:.3f} | " +
       " ".join(f"{k.split('-v1')[0]}:m{v[0]/v[2]:.2f}/c{v[1]/v[2]:.2f}" for k, v in agg.items()))
