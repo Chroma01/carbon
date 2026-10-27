@@ -91,28 +91,6 @@ Evaluation loads `dataset_test_split` only when `eval_strategy` or `do_eval`
 requests it. `--do_eval true` also evaluates and saves metrics after training.
 Automatic HF Jobs benchmark evaluation is deferred.
 
-### SFT smoke test
-
-```sh
-# One allocation, eight H100s, at most one hour; no Hub publishing or Trackio.
-sbatch training/posttraining/sft_smoke.slurm
-# Alternative on two B300s, using PyTorch SDPA instead of the H100-specific kernel:
-sbatch --partition=hopper-b300 --gres=gpu:2 --cpus-per-task=16 --mem=512G \
-  training/posttraining/sft_smoke.slurm --attn_implementation sdpa
-```
-
-This runs the actual 14B model on 32 FineDNA-SFT examples with the production
-sequence limit, batch size 1 per GPU, and gradient accumulation 1. It trains
-three steps, resumes checkpoint 2 to step 4, checks finite losses and gradient
-norms and saved optimizer shards, then reloads the final model/tokenizer and
-generates two tokens. Results and checkpoints remain in
-`scratch/sft-smoke-JOB_ID`; Slurm logs are in `logs/`.
-
-To repeat only resume/reload validation against a completed checkpoint 2, set
-`CARBON_SMOKE_OUTPUT_DIR` to that existing run's absolute output path and
-`CARBON_SMOKE_RESUME_ONLY=1` before submitting the smoke job. Each job snapshots
-its launcher so edits to the checkout cannot change a running shell script.
-
 ### RL
 
 RL validation is a separate follow-up.
