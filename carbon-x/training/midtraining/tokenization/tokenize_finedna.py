@@ -19,6 +19,7 @@ than there are files leaves 0-byte shards that the training blend then has to sk
 """
 import argparse
 import os
+import re
 from datatrove.executor import SlurmPipelineExecutor
 from datatrove.pipeline.readers import ParquetReader
 from datatrove.pipeline.tokens.megatron_tokenizer import MegatronDocumentTokenizer
@@ -104,7 +105,12 @@ if __name__ == "__main__":
             f"  spans them, e.g. --input .../data --glob 'instruct_nemotron_*/*.parquet'.\n"
             f"  Pass --overwrite if you really mean to replace them."
         )
-    tag = "_".join(args.output.rstrip("/").split("/")[-2:])
+    # Derive the state dir from the INPUT as well as the output. Keyed on the output alone, two runs reading
+    # different sources into one directory share datatrove state and the second silently skips. With the input in
+    # the key they stay independent, so writing several sources into one directory works as long as each run uses
+    # its own --save_name (which the check above enforces).
+    _in = re.sub(r"[^A-Za-z0-9]+", "_", args.input.rstrip("/")).strip("_")[-40:]
+    tag = "_".join(args.output.rstrip("/").split("/")[-2:]) + "__" + _in
     print(f"INPUT={args.input}\nOUTPUT={args.output}\nsave_name={args.save_name} n_tasks={args.n_tasks} tag={tag} local={args.local}")
     pipeline=[
         ParquetReader(args.input, glob_pattern=args.glob, text_key="text",

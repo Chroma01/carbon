@@ -137,8 +137,9 @@ python tokenization/tokenize_finedna.py \
     --save_name sft_nemotron_ifchat_v3_qwen3h_npad --n_tasks 54
 ```
 
-The script refuses to write into a directory that already holds shards of the same name, so this fails loudly
-rather than quietly costing you two thirds of the instruction data.
+Tokenizing them separately also works, as long as each run uses its own `--save_name`: the state directory is
+keyed on the input as well as the output, so the runs stay independent, and the script refuses to reuse a
+`--save_name` that already has shards there.
 
 Step 4 does not read FineDNA. The freeze stage trained on `eukaryote_generator_10B_subset` from
 [`HuggingFaceBio/carbon-pretraining-corpus`](https://huggingface.co/datasets/HuggingFaceBio/carbon-pretraining-corpus),
