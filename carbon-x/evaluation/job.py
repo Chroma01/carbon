@@ -57,7 +57,7 @@ _NO_STDERR = object()
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--model", required=True, help="Inspect model string")
+    parser.add_argument("--model", required=True, help="Hub repo ID for vllm, or an Inspect model string for endpoint")
     parser.add_argument("--backend", choices=["vllm", "endpoint"], required=True)
     parser.add_argument("--output_dir", required=True, help="hf://buckets/... folder for the log and summary")
     parser.add_argument("--eval_kwargs", type=json.loads, required=True, help="JSON keyword arguments for eval()")
@@ -243,13 +243,15 @@ def main():
     server = None
     status = None
     try:
+        model = args.model
         if args.backend == "vllm":
-            repo_id = args.model.removeprefix("vllm/")
             # Download before starting vLLM so the transfer does not count against its startup timeout
-            download_weights(repo_id, dict(arg.split("=", 1) for arg in args.vllm_args).get("revision"))
-            server = start_vllm(repo_id, args.vllm_args)
+            download_weights(args.model, dict(arg.split("=", 1) for arg in args.vllm_args).get("revision"))
+            server = start_vllm(args.model, args.vllm_args)
+            # Inspect's vLLM provider connects to the server through VLLM_BASE_URL
             os.environ["VLLM_BASE_URL"] = f"http://127.0.0.1:{VLLM_PORT}/v1"
-        log = inspect_eval(model=args.model, log_dir=str(LOG_DIR), display="plain", **args.eval_kwargs)[0]
+            model = f"vllm/{args.model}"
+        log = inspect_eval(model=model, log_dir=str(LOG_DIR), display="plain", **args.eval_kwargs)[0]
         if server is not None and server.poll() is not None:
             raise RuntimeError(f"vLLM exited during the evaluation with status {server.returncode}")
         status = log.status

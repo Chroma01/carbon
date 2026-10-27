@@ -156,7 +156,7 @@ def _safe_name(value: str) -> str:
 
 def log_model_id(model: str, reasoning_effort: str | None) -> str:
     """Returns the model's folder in the bucket, matching the post-training leaderboard's layout."""
-    model_id = model.removeprefix("vllm/").removeprefix("hf-inference-providers/").split(":", 1)[0]
+    model_id = model.removeprefix("hf-inference-providers/").split(":", 1)[0]
     return f"{model_id}-{reasoning_effort}" if reasoning_effort else model_id
 
 
@@ -228,9 +228,6 @@ def main():
         raise ValueError("--model_base_url only applies to --backend endpoint; vllm serves the model inside the Job")
     if not is_vllm and (args.revision or args.vllm_args):
         raise ValueError("--revision and --vllm_args only apply to --backend vllm")
-    # Inspect's vLLM provider takes vllm/<repo_id>; endpoints use --model as given
-    model_id = args.model.removeprefix("vllm/") if is_vllm else args.model
-    model = f"vllm/{model_id}" if is_vllm else model_id
     flavor = args.flavor or (DEFAULT_GPU_FLAVOR if is_vllm else DEFAULT_CPU_FLAVOR)
     revision = args.revision or "main"
     chat_template_kwargs = args.chat_template_kwargs
@@ -239,7 +236,7 @@ def main():
     vllm_args = {}
     model_args = dict(args.model_args)
     if is_vllm:
-        repo_id = model_id
+        repo_id = args.model
         if not hub_model_exists(api, repo_id):
             raise ValueError(
                 f"Could not find the Hub model {repo_id!r}; pass --backend endpoint to evaluate an Inspect model "
@@ -267,7 +264,7 @@ def main():
         model_args.setdefault("client_timeout", INSPECT_LIMITS["vllm"]["timeout"])
     max_connections = args.max_connections or (128 if is_vllm else 50)
 
-    model_log_id = log_model_id(model, args.reasoning_effort)
+    model_log_id = log_model_id(args.model, args.reasoning_effort)
     timestamp = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
     secrets = {"HF_TOKEN": token}
     for name in args.secrets:
@@ -284,7 +281,7 @@ def main():
         if max_tokens is None and max_model_len is not None:
             max_tokens = max_model_len - prompt_margin
         metadata = {
-            "model_id": model_id,
+            "model_id": args.model,
             "revision": revision if is_vllm else None,
             "backend": backend,
             "reasoning_effort": args.reasoning_effort,
@@ -316,7 +313,7 @@ def main():
             "python3",
             f"{JOB_ROOT}/evaluation/job.py",
             "--model",
-            model,
+            args.model,
             "--backend",
             backend,
             "--output_dir",
