@@ -14,25 +14,35 @@ This directory contains the training recipe and evals for
 
 | Stage | Framework | Starts from | Data | Recipe |
 |---|---|---|---|---|
-| Midtraining | Megatron-LM | `Qwen/Qwen3-14B` | 300B tokens of DNA and text | [`training/mid/`](training/mid) |
-| SFT | TRL | `HuggingFaceBio/Carbon-X-Base` | `HuggingFaceBio/FineDNA-SFT` | [`training/sft/`](training/sft) |
-| RL | TRL | `HuggingFaceBio/Carbon-X-SFT` | `HuggingFaceBio/FineDNA-RL` | [`training/rl/`](training/rl) |
+| Midtraining | Megatron-LM | `Qwen/Qwen3-14B` | 300B tokens of DNA and text | [`training/midtraining/`](training/midtraining) |
+| SFT | TRL | `HuggingFaceBio/Carbon-X-Base` | `HuggingFaceBio/FineDNA-SFT` | [`training/posttraining/`](training/posttraining) |
+| RL | TRL | `HuggingFaceBio/Carbon-X-SFT` | `HuggingFaceBio/FineDNA-RL` | [`training/posttraining/`](training/posttraining) |
+
+## Installation
+
+Run all commands from this directory:
+
+```sh
+cd carbon-x
+uv sync
+source .venv/bin/activate
+```
 
 ## Layout
 
 ```
 carbon-x/
-├── src/carbon_x/         # code shared by the SFT and RL scripts
-│   ├── configs.py        # script and trainer arguments
-│   ├── callbacks.py      # push checkpoints to Hub revisions
+├── src/carbon_x/             # code shared by the SFT and RL scripts
+│   ├── configs.py            # script and trainer arguments
+│   ├── callbacks.py          # log training samples to Trackio
 │   ├── hub.py
+│   ├── logging.py            # Trackio setup
 │   ├── model_utils.py
-│   ├── rewards.py        # verifiable rewards for RL
-│   ├── vepqa_claims.py   # groundedness checks against the input sequence
-│   └── dna_skills/       # verifiers for DNA skill tasks
+│   ├── rewards.py            # verifiable rewards for RL
+│   ├── vepqa_claims.py       # groundedness checks against the input sequence
+│   └── dna_skills/           # verifiers for DNA skill tasks
 ├── training/
-│   ├── mid/              # Megatron-LM
-│   ├── sft/              # TRL
-│   └── rl/               # TRL
-└── evaluation/           # Inspect tasks for the five DNA benchmarks
+│   ├── midtraining/          # Megatron-LM
+│   └── posttraining/         # TRL: sft.py, rl.py, configs and Slurm launchers
+└── evaluation/               # Inspect tasks for the five DNA benchmarks
 ```

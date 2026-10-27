@@ -7,8 +7,16 @@ implemented as [Inspect](https://inspect.aisi.org.uk/) tasks in
 
 | Benchmark | Inspect task | Dataset |
 |---|---|---|
-| BioReason Coding | `bioreason_coding_sequence_only` | `HuggingFaceBio/bioreason_vep` |
-| BioReason Non-SNV | `bioreason_non_snv` | `HuggingFaceBio/bioreason_vep` |
-| GenomeQA | `genomeqa_mcq_carbon` | `HuggingFaceBio/genomeqa` |
-| NextBase | `seqrecqa_varlen` | `HuggingFaceBio/sequence-recovery-qa` (`varlen`) |
-| FrontierVEP | `vepqa_single_1k` | `HuggingFaceBio/vepqa` (`binary_single_1k`) |
+| BioReason Coding | [`bioreason.py@bioreason_coding_sequence_only`](tasks/bioreason.py) | `HuggingFaceBio/bioreason_vep` |
+| BioReason Non-SNV | [`bioreason.py@bioreason_non_snv`](tasks/bioreason.py) | `HuggingFaceBio/bioreason_vep` |
+| GenomeQA | [`genomeqa.py@genomeqa_mcq_carbon`](tasks/genomeqa.py) | `HuggingFaceBio/genomeqa` |
+| NextBase | [`seqrecqa.py@seqrecqa_varlen`](tasks/seqrecqa.py) | `HuggingFaceBio/sequence-recovery-qa` (`varlen`) |
+| FrontierVEP | [`vepqa.py@vepqa_single_1k`](tasks/vepqa.py) | `HuggingFaceBio/vepqa` (`binary_single_1k`) |
+
+Run from the `carbon-x/` directory, e.g. against a model served with vLLM:
+
+```sh
+inspect eval evaluation/tasks/vepqa.py@vepqa_single_1k \
+  --model vllm/HuggingFaceBio/Carbon-X \
+  -M trust_remote_code=true
+```

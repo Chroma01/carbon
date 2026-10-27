@@ -16,8 +16,6 @@ reward_funcs:
 - seqrecqa_position_task
 
 # Trainer config
-callbacks:
-- push_to_hub_revision
 bf16: true
 gradient_checkpointing: true
 gradient_checkpointing_kwargs:
@@ -54,11 +52,9 @@ save_total_limit: 2
 logging_steps: 1
 log_level: info
 log_completions: true
-log_completions_hub_repo: HuggingFaceBio/Carbon-X-RL-ckpts-v00.00-rollouts
 num_completions_to_print: 0
 run_name: v00.00
 hub_model_id: HuggingFaceBio/Carbon-X-RL-ckpts
-hub_model_revision: v00.00
 hub_strategy: every_save
 output_dir: scratch/Carbon-X-RL-ckpts-v00.00
 push_to_hub: true
