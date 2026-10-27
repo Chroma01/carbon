@@ -29,7 +29,7 @@ from vepqa import vepqa_class_metrics, vepqa_scorer
 # one row per sequence pair, because the source coding questions name the gene only for pathogenic variants and use
 # disjoint templates per label, so their wording gives the label away.
 DATASET_PATH = "HuggingFaceBio/DNAIntelligenceIndex"
-DATASET_REVISION = "aebffe19836c2fdeaabb73627793bf3d2c089dc8"
+DATASET_REVISION = "872f12bf811f1945949e628c89e06821f804c9ae"
 
 
 def record_to_sample(record: dict[str, Any], group: str) -> Sample:

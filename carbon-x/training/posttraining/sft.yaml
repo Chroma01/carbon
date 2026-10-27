@@ -11,7 +11,7 @@ gradient_accumulation_steps: 1
 gradient_checkpointing: true
 gradient_checkpointing_kwargs:
   use_reentrant: false
-hub_model_id: HuggingFaceBio/Carbon-X-SFT-ckpts
+hub_model_id: Carbon-X-SFT-ckpts
 hub_strategy: every_save
 learning_rate: 1.0e-05
 log_level: info
@@ -37,5 +37,5 @@ seed: 42
 trust_remote_code: true
 use_liger_kernel: true
 warmup_steps: 0.03
-trackio_space_id: HuggingFaceBio/carbon-x-experiments
+trackio_space_id: carbon-x-experiments
 project: sft

@@ -14,8 +14,7 @@
 
 
 """
-Verify the factual claims in VEPQA templated reasoning (HuggingFaceBio/vepqa-sft-draft-loubna, config
-`templated_reasoning`), for the `vepqa_groundedness` reward.
+Verify the factual claims in VEPQA templated reasoning, for the `vepqa_groundedness` reward.
 
 `verify(prompt, completion)` recomputes the truth from the prompt (reference DNA, 1-based position, ref/alt alleles)
 and checks every sentence of the completion, with `<dna>` tags removed. A leading empty `<think></think>` block and a
@@ -45,8 +44,7 @@ Definitions used to generate the data (s = reference window, i = position - 1):
   flanks of 0/12/24/48 bases (40/20/20/20% of rows), shorter near the edge. A quoted flank must be the bases
   immediately on its stated side of the block, and a stated flank length must match the quoted bases.
 - surprise_bin: LLR = log P(window with alt) - log P(window with ref), natural log, over the whole 8,192-bp window
-  under Carbon Mid-300B (HuggingFaceBio/Qwen3-14B-Instruct-Mid-300B), binned at -1, -4.7, -9.0 and -17.5 into levels 0
-  (above -1) to 4 (below -17.5)
+  under HuggingFaceBio/Carbon-X-Base, binned at -1, -4.7, -9.0 and -17.5 into levels 0 (above -1) to 4 (below -17.5)
 """
 
 import re

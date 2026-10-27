@@ -155,7 +155,7 @@ def _safe_name(value: str) -> str:
 
 
 def log_model_id(model: str, reasoning_effort: str | None) -> str:
-    """Returns the model's folder in the bucket, matching the post-training leaderboard's layout."""
+    """Returns the model's folder in the bucket."""
     model_id = model.removeprefix("hf-inference-providers/").split(":", 1)[0]
     return f"{model_id}-{reasoning_effort}" if reasoning_effort else model_id
 

@@ -185,7 +185,7 @@ def _metric_summary(score: Any, metric: Any) -> dict[str, Any]:
 
 
 def build_summary(log: Any) -> dict[str, Any]:
-    """Summarises an Inspect log in the `summary.json` format read by the post-training leaderboard."""
+    """Summarises an Inspect log as the primary metric, all metrics and sample counts for `summary.json`."""
     samples = log.samples or []
     completed = [sample for sample in samples if sample.error is None and sample.output.choices]
     stop_reasons = Counter(sample.output.stop_reason for sample in completed)

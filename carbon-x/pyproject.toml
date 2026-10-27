@@ -32,7 +32,7 @@ sft = [
 ]
 rl = [
   "vllm==0.25.1",
-  # NeMo Gym's instruction-following checker, which scores the IFEval and IFBench constraints of Nemotron-RL-IF
+  # NeMo Gym's instruction-following checker, which scores the IFEval and IFBench constraints of FineDNA-RL's IF rows
   "absl-py==2.5.0",
   "immutabledict",
   "instruction-following-eval @ git+https://github.com/josejg/instruction_following_eval.git@0c495b2",

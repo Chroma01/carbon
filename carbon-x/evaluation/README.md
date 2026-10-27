@@ -64,8 +64,7 @@ submitting them.
 
 ### Results
 
-Logs go to the private Storage Bucket `<hf_user>/Carbon-X-Evals`, or to the one passed with `--bucket`, using the
-same layout as the post-training leaderboard:
+Logs go to the private Storage Bucket `<hf_user>/Carbon-X-Evals`, or to the one passed with `--bucket`:
 
 ```
 <model>[-<reasoning_effort>]/<revision>/<benchmark>/<timestamp>/

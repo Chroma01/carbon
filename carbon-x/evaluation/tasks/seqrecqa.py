@@ -22,7 +22,7 @@ from inspect_ai.solver import TaskState, generate
 
 
 DATASET_PATH = "HuggingFaceBio/DNAIntelligenceIndex"
-DATASET_REVISION = "aebffe19836c2fdeaabb73627793bf3d2c089dc8"
+DATASET_REVISION = "872f12bf811f1945949e628c89e06821f804c9ae"
 # A DNA sequence, optionally in <dna> tags, that ends the completion
 _FINAL_SEQUENCE_PATTERN = re.compile(
     r"(?:<dna>\s*(?P<tagged>[ACGT]+)\s*</dna>|(?:\A|\n)[ \t]*(?P<bare>[ACGT]+))[\W_]*\Z", re.IGNORECASE

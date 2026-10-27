@@ -54,14 +54,14 @@ log_level: info
 log_completions: true
 num_completions_to_print: 0
 run_name: v00.00
-hub_model_id: HuggingFaceBio/Carbon-X-RL-ckpts
+hub_model_id: Carbon-X-RL-ckpts
 hub_strategy: every_save
 output_dir: scratch/Carbon-X-RL-ckpts-v00.00
 push_to_hub: true
 hub_private_repo: true
 report_to:
 - trackio
-trackio_space_id: HuggingFaceBio/carbon-x-experiments
+trackio_space_id: carbon-x-experiments
 project: rl
 seed: 42
 trust_remote_code: true
