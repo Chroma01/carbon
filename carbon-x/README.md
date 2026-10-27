@@ -42,7 +42,6 @@ carbon-x/
 │   ├── hub.py
 │   ├── logging.py            # Trackio setup
 │   ├── model_utils.py
-│   ├── tokenizer.py          # hybrid tokenizer with checkpoint serialization fixes
 │   ├── rewards.py            # verifiable rewards for RL
 │   ├── vepqa_claims.py       # groundedness checks against the input sequence
 │   └── dna_skills/           # verifiers for DNA skill tasks

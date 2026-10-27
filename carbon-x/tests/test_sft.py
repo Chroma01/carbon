@@ -66,7 +66,10 @@ class TokenizerIntegrationTests(unittest.TestCase):
         from carbon_x.model_utils import get_tokenizer
 
         cls.tokenizer = get_tokenizer(
-            ModelConfig(model_name_or_path="HuggingFaceBio/Carbon-X-Base"),
+            ModelConfig(
+                model_name_or_path="HuggingFaceBio/Carbon-X-Base",
+                model_revision=os.environ.get("CARBON_SFT_MODEL_REVISION", "main"),
+            ),
             SimpleNamespace(trust_remote_code=True, chat_template=None),
         )
         cls.tokenizer.eos_token = "<|im_end|>"

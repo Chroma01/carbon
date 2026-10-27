@@ -41,10 +41,10 @@ model's bundled training chat template and `<|im_end|>` as EOS. It does not use
 the separate Carbon FNS trainer. `warmup_steps: 0.03` means a 3% warmup with the
 pinned Transformers version.
 
-The local hybrid tokenizer is copied from the released base model, with fixes
-to preserve EOS/padding overrides when saving and loading. It is included in
-saved checkpoints, so `AutoTokenizer.from_pretrained(..., trust_remote_code=True)`
-reloads the training tokenizer without requiring this package.
+The tokenizer loads directly from the model repository. This recipe requires
+the upstream [EOS persistence fix](https://huggingface.co/HuggingFaceBio/Carbon-X-Base/discussions/2)
+so saved checkpoints retain `<|im_end|>` when reloaded with
+`AutoTokenizer.from_pretrained(..., trust_remote_code=True)`.
 
 The production config enables Trackio and Hub checkpoint publishing:
 
@@ -122,6 +122,8 @@ tokenizer/data for preprocessing:
 python -m unittest discover -s tests -v
 # Include real tokenizer/data and CPU train/save/resume checks (requires Hub access):
 CARBON_SFT_INTEGRATION=1 python -m unittest discover -s tests -v
+# Before the upstream EOS fix is merged, validate its revision explicitly:
+CARBON_SFT_INTEGRATION=1 CARBON_SFT_MODEL_REVISION=refs/pr/2 python -m unittest discover -s tests -v
 bash -n training/posttraining/sft.slurm training/posttraining/sft_smoke.slurm
 ```
 
