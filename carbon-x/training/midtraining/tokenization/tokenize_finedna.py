@@ -87,28 +87,43 @@ class HybridMegatronTokenizer(MegatronDocumentTokenizer):
 
 
 if __name__ == "__main__":
-    # logging_dir MUST be unique per output (train vs val share save_name!) or datatrove's
-    # executor-state cache collides and both jobs run the same (last-submitted) config.
-    # datatrove keys its completion markers on logging_dir, which is derived from --output below. Two runs with the
-    # same --output therefore share state: the second finds the first's markers, skips, exits 0 and writes nothing.
-    # Reading several sources into one directory has to be a single run with a glob that spans them, not a loop.
+    # datatrove keys its completion markers on logging_dir and skips any rank already marked done, so logging_dir
+    # has to be unique per (input, output) pair: keyed on the output alone, two runs writing different sources into
+    # one directory share state and the second skips, exits 0 and writes nothing.
     import glob as _glob
-    existing = _glob.glob(os.path.join(args.output, f"{args.save_name}_*_tokens.bin"))
-    if existing and not args.overwrite:
+    import shutil
+    _in = re.sub(r"[^A-Za-z0-9]+", "_", args.input.rstrip("/")).strip("_")[-40:]
+    tag = "_".join(args.output.rstrip("/").split("/")[-2:]) + "__" + _in
+    logging_dir = f"{args.log_dir}/tokenize_{tag}"
+    completions = os.path.join(logging_dir, "completions")
+
+    existing = _glob.glob(os.path.join(args.output, f"{args.save_name}_*_tokens.*"))
+    if args.overwrite:
+        # The completion markers have to go with the shards, or the rerun skips every task and writes nothing.
+        for f in existing:
+            os.remove(f)
+        had_markers = os.path.isdir(completions)
+        shutil.rmtree(completions, ignore_errors=True)
+        print(f"--overwrite: removed {len(existing)} stale shard file(s)"
+              f"{' and the datatrove completion markers' if had_markers else ''}")
+    elif existing:
         raise SystemExit(
-            f"ERROR: {args.output} already holds {len(existing)} shard(s) named {args.save_name}_*.\n"
+            f"ERROR: {args.output} already holds {len(existing)} shard file(s) named {args.save_name}_*.\n"
             f"  A second run with the same --output and --save_name would silently skip (shared datatrove state)\n"
             f"  or overwrite those shards. To read several sources into one directory, use ONE run with a glob that\n"
             f"  spans them, e.g. --input .../data --glob 'instruct_nemotron_*/*.parquet'.\n"
             f"  Pass --overwrite if you really mean to replace them."
         )
-    # Derive the state dir from the INPUT as well as the output. Keyed on the output alone, two runs reading
-    # different sources into one directory share datatrove state and the second silently skips. With the input in
-    # the key they stay independent, so writing several sources into one directory works as long as each run uses
-    # its own --save_name (which the check above enforces).
-    _in = re.sub(r"[^A-Za-z0-9]+", "_", args.input.rstrip("/")).strip("_")[-40:]
-    tag = "_".join(args.output.rstrip("/").split("/")[-2:]) + "__" + _in
-    print(f"INPUT={args.input}\nOUTPUT={args.output}\nsave_name={args.save_name} n_tasks={args.n_tasks} tag={tag} local={args.local}")
+    elif os.path.isdir(completions):
+        # Markers without shards: someone deleted the output by hand. Running on would skip every task and write
+        # nothing, so say so instead of exiting 0 on an empty dataset.
+        raise SystemExit(
+            f"ERROR: no shards in {args.output}, but datatrove completion markers exist in {completions}.\n"
+            f"  Every task would be skipped and this run would write nothing. Pass --overwrite to clear them."
+        )
+
+    print(f"INPUT={args.input}\nOUTPUT={args.output}\nsave_name={args.save_name} n_tasks={args.n_tasks} "
+          f"tag={tag} local={args.local}")
     pipeline=[
         ParquetReader(args.input, glob_pattern=args.glob, text_key="text",
                       limit=args.limit if args.limit > 0 else -1),
@@ -122,12 +137,12 @@ if __name__ == "__main__":
     if args.local:
         from datatrove.executor import LocalPipelineExecutor
         ex = LocalPipelineExecutor(pipeline=pipeline, tasks=args.n_tasks, workers=args.n_tasks,
-                                   logging_dir=f"{args.log_dir}/tokenize_{tag}")
+                                   logging_dir=logging_dir)
     else:
         ex = SlurmPipelineExecutor(
             job_name=f"meg-tok-{tag}", pipeline=pipeline,
             tasks=args.n_tasks, time="6:00:00", partition=args.partition,
             cpus_per_task=24, qos="normal", mem_per_cpu_gb=1,
-            logging_dir=f"{args.log_dir}/tokenize_{tag}",
+            logging_dir=logging_dir,
         )
     ex.run()
