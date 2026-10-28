@@ -100,9 +100,9 @@ check sequence_recovery "$OUT/${LABEL}_*.json"
 fi
 fi
 
-# English, scored by the same MCF/CF primitive with the field names remapped per dataset. Never tag DNA here.
-# The two MCQ tasks use --prompt-style lighteval: the release post's English panels came from lighteval, whose
-# option rendering differs from the in-house one and is worth ~4 points on an instruction-tuned model.
+# English, scored by the same MCF/CF primitive with the field names remapped per dataset.
+# The two MCQ tasks use --prompt-style lighteval, which renders the option list the way lighteval does; it is worth
+# ~4 points on an instruction-tuned model, so the style is part of the task definition.
 if [ "${RUN_ENGLISH:-1}" = "1" ]; then
   if want mmlu_pro "$OUT/mmlu_pro_$LABEL.json"; then
   echo "== [$LABEL] MMLU-Pro biology"

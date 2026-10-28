@@ -20,13 +20,13 @@ This directory contains the training recipe and evals for
 
 ## Installation
 
-Run all commands from this directory:
+Run commands from `carbon-x/`. Install dependencies with:
 
 ```sh
-cd carbon-x
 uv sync
-source .venv/bin/activate
 ```
+
+See [`training/posttraining/`](training/posttraining) for training launch commands.
 
 ## Layout
 

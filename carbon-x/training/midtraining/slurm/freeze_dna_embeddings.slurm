@@ -53,11 +53,10 @@ MEGATRON_PATH="${MEGATRON_PATH:?set MEGATRON_PATH to your Megatron-LM-Carbon che
 TRAINING_SCRIPT="${MEGATRON_PATH}/pretrain_gpt_freeze_body_untied.py"   # shipped alongside this script
 
 TOKENIZER="${TOKENIZER:-HuggingFaceBio/Carbon-X}"
-# This stage uses the 100k-sequence eukaryote SUBSET (~10B tokens) from HuggingFaceBio/carbon-pretraining-corpus,
-# which FineDNA does not carry, so the shard names below have the 100k_ prefix. Tokenize it with:
-#   tokenize_finedna.py --input hf://datasets/HuggingFaceBio/carbon-pretraining-corpus/eukaryote_generator_10B_subset/<subset> \
-#       --glob '*.parquet' --save_name gener_metadata_100k_<subset>_qwen3h_npad
-MEG_DATA="${MEG_DATA:?set MEG_DATA to the tokenized 100k eukaryote subset (gener_metadata_100k_*_qwen3h_npad)}"
+# This stage trains on eukaryote DNA only, reading the same tokenized shards step 5 uses, so there is nothing
+# extra to tokenize: point MEG_DATA at the eukaryote directory from step 1 ($DNA_DIR/eukaryote). It reads ~10B
+# tokens of it, far less than the sources hold, sampled according to the species weights below.
+MEG_DATA="${MEG_DATA:?set MEG_DATA to the tokenized eukaryote directory from step 1 (\$DNA_DIR/eukaryote)}"
 PRETRAINED_MEGATRON_CKPT="${PRETRAINED_MEGATRON_CKPT:?set it to the vocab-extended Qwen3-14B-Instruct Megatron checkpoint}"
 SAVE_PATH="${SAVE_PATH:-checkpoints/qwen3-14b-instruct-freeze-body-dna-10B-npad}"
 RUN_NAME="carbon-x-freeze-body-14b"
@@ -66,14 +65,27 @@ if [ ! -d "${PRETRAINED_MEGATRON_CKPT}" ]; then
     echo "Missing pretrained Megatron checkpoint dir: ${PRETRAINED_MEGATRON_CKPT}"; exit 1
 fi
 
-# ---- Data mix (100% eukaryote with metadata); per-shard weight = species_weight / num_shards ----
+# ---- Data mix (100% eukaryote with metadata), weights = the natural species distribution of the corpus ----
+# Shards are discovered, not assumed: a species ends up with as many as it had parquet files, since datatrove
+# hands whole files to tasks. Same add() as configs/mixture_300b.sh: skip 0-byte shards, weight the rest by size.
 DATA_PATH=""
-for i in $(seq 0 9); do s=$(printf "%05d" $i); DATA_PATH="${DATA_PATH} 0.0029 ${MEG_DATA}/gener_metadata_100k_fungi_qwen3h_npad/gener_metadata_100k_fungi_qwen3h_npad_${s}_tokens"; done
-for i in $(seq 0 9); do s=$(printf "%05d" $i); DATA_PATH="${DATA_PATH} 0.0197 ${MEG_DATA}/gener_metadata_100k_invertebrate_qwen3h_npad/gener_metadata_100k_invertebrate_qwen3h_npad_${s}_tokens"; done
-for i in $(seq 0 9); do s=$(printf "%05d" $i); DATA_PATH="${DATA_PATH} 0.008 ${MEG_DATA}/gener_metadata_100k_plant_qwen3h_npad/gener_metadata_100k_plant_qwen3h_npad_${s}_tokens"; done
-for i in $(seq 0 3); do s=$(printf "%05d" $i); DATA_PATH="${DATA_PATH} 0.00125 ${MEG_DATA}/gener_metadata_100k_protozoa_qwen3h_npad/gener_metadata_100k_protozoa_qwen3h_npad_${s}_tokens"; done
-for i in $(seq 0 19); do s=$(printf "%05d" $i); DATA_PATH="${DATA_PATH} 0.0134 ${MEG_DATA}/gener_metadata_100k_vertebrate_mammalian_qwen3h_npad/gener_metadata_100k_vertebrate_mammalian_qwen3h_npad_${s}_tokens"; done
-for i in $(seq 0 29); do s=$(printf "%05d" $i); DATA_PATH="${DATA_PATH} 0.01403 ${MEG_DATA}/gener_metadata_100k_vertebrate_other_qwen3h_npad/gener_metadata_100k_vertebrate_other_qwen3h_npad_${s}_tokens"; done
+add(){ mapfile -t P < <(for f in "$1"/*_tokens.bin; do [ -s "$f" ] && [ -s "${f%.bin}.idx" ] && printf '%s\n' "${f%.bin}"; done)
+  if [ ${#P[@]} -eq 0 ]; then echo "ERROR: no usable shards in $1 (need non-empty *_tokens.bin with a matching .idx)" >&2; exit 1; fi
+  W=$("$PYBIN" -c "
+import os, sys
+w, paths = float(sys.argv[1]), sys.argv[2:]
+sizes = [os.path.getsize(p + '.bin') for p in paths]
+print(' '.join(f'{w * s / sum(sizes)} {p}' for s, p in zip(sizes, paths)))" "$2" "${P[@]}") \
+    || { echo "ERROR: weight calc failed for $1" >&2; exit 1; }
+  DATA_PATH="$DATA_PATH $W"; }
+
+D="${MEG_DATA}/gener_metadata"
+add "${D}_fungi_qwen3h_npad"                0.029
+add "${D}_protozoa_qwen3h_npad"             0.005
+add "${D}_plant_qwen3h_npad"                0.080
+add "${D}_invertebrate_qwen3h_npad"         0.197
+add "${D}_vertebrate_mammalian_qwen3h_npad" 0.268
+add "${D}_vertebrate_other_qwen3h_npad"     0.421
 
 # ---- Parallelism (14B: TP=4, 4 nodes -> DP=8; MBS=1 for memory headroom) ----
 TP=4; PP=1; MBS=1; GBS=256; TRAIN_ITERS=4800  # ~10B tokens at seq_len=8192, GBS=256
