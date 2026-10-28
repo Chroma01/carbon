@@ -78,17 +78,11 @@ def main(script_args, training_args, model_args):
         init_trackio_training(training_args)
 
     ################
-    # Load datasets
+    # Load dataset
     ################
-    dataset_kwargs = {
-        "path": script_args.dataset_name,
-        "name": script_args.dataset_config,
-        "streaming": script_args.dataset_streaming,
-    }
-    train_dataset = datasets.load_dataset(**dataset_kwargs, split=script_args.dataset_train_split)
-    eval_dataset = None
-    if training_args.eval_strategy != "no" or training_args.do_eval:
-        eval_dataset = datasets.load_dataset(**dataset_kwargs, split=script_args.dataset_test_split)
+    train_dataset = datasets.load_dataset(
+        script_args.dataset_name, name=script_args.dataset_config, split=script_args.dataset_train_split,
+    )
 
     ################
     # Load tokenizer
@@ -108,7 +102,6 @@ def main(script_args, training_args, model_args):
         model=model,
         args=training_args,
         train_dataset=train_dataset,
-        eval_dataset=eval_dataset,
         processing_class=tokenizer,
         peft_config=get_peft_config(model_args),
     )
@@ -124,18 +117,10 @@ def main(script_args, training_args, model_args):
     logger.info("*** Train ***")
     train_result = trainer.train(resume_from_checkpoint=checkpoint)
     metrics = train_result.metrics
-    if not script_args.dataset_streaming:
-        metrics["train_samples"] = len(train_dataset)
+    metrics["train_samples"] = len(train_dataset)
     trainer.log_metrics("train", metrics)
     trainer.save_metrics("train", metrics)
     trainer.save_state()
-
-    if training_args.do_eval:
-        metrics = trainer.evaluate()
-        if not script_args.dataset_streaming:
-            metrics["eval_samples"] = len(eval_dataset)
-        trainer.log_metrics("eval", metrics)
-        trainer.save_metrics("eval", metrics)
 
     ##################################
     # Save model and create model card
