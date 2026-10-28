@@ -25,7 +25,7 @@ interpreter if you have not activated the venv.
 | HellaSwag | did it damage general English? | `Rowan/hellaswag`, validation |
 | OpenBookQA | did it damage general English? | `allenai/openbookqa`, config `main`, test |
 | SeqQA (3 tasks) | can it answer questions that require reading the DNA? | `HuggingFaceBio/seqqa-carbon-curated-3tasks` |
-| GenomeQA eukaryote classification | can it classify a genomic sequence? | `HuggingFaceBio/genomeqa`, file `mcq/eukaryote_cls_mcq.parquet`; rows are kept when the answer is <=30 chars and the question holds a run of >=50 bases, which is 600 of the 1,000 rows |
+| GenomeQA eukaryote classification | can it classify a genomic sequence? | `HuggingFaceBio/genomeqa`, file `mcq/eukaryote_cls_mcq.parquet`; the file mixes three question types, so we score the 600 `metadata.dim == "basic_class"` rows (the other 400 ask which of four 8 kb sequences is the target, which is retrieval, not classification) |
 | Sequence recovery | can it reconstruct DNA it has not seen? per-base accuracy over the first 30 bases | `GenerTeam/sequence-recovery` |
 
 Metrics: MCF (accuracy by option-letter logprob) and CF (accuracy by lowest answer bits-per-byte) for the

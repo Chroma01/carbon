@@ -1,7 +1,17 @@
 """GenomeQA eukaryote classification, MCF + CF, scored with vLLM.
 
-The details below are what the published numbers were produced with, so they are not free parameters:
-  * rows kept only when the answer text is <= 30 chars and the question contains a run of >= 50 A/C/G/T/N;
+`mcq/eukaryote_cls_mcq.parquet` holds 1,000 rows of three question types, told apart by `metadata.dim`, and only
+one of them is the classification task:
+
+  * `basic_class` (600) -- given a sequence, which group is it from; the options are taxon names. This is the task.
+  * `reverse_search` (200) and `odd_one_out` (200) -- which of these four 8 kb sequences is from X / is the odd
+    one out. The options are sequences, not labels, so they are sequence retrieval rather than classification,
+    and CF would be comparing the likelihood of four 8 kb answers. Here we score only `basic_class`.
+
+The details below are what was used for the midtraining evaluation:
+  * only `basic_class` rows, i.e. n = 600;
+  * the first run of >= 50 A/C/G/T/N in the question splits it into stem and sequence (every `basic_class` row has
+    one, so this selects nothing, it only finds the boundary);
   * the DNA run is truncated to --L characters;
   * MCF prompt = "{stem}\\n{seq}\\n{A. opt}...\\nAnswer:" scored against " A", " B", ...;
   * CF prompt   = "{stem}\\n{seq}\\nAnswer:" scored against " {option}", byte-normalised to bits per byte;
@@ -37,7 +47,10 @@ def main():
 
     f = hf_hub_download("HuggingFaceBio/genomeqa", "mcq/eukaryote_cls_mcq.parquet", repo_type="dataset")
     df = pd.read_parquet(f)
-    df = df[df["answer_text"].astype(str).str.len() <= 30].reset_index(drop=True)
+    dim = df["metadata"].apply(lambda m: json.loads(m).get("dim"))
+    df = df[dim == "basic_class"].reset_index(drop=True)
+    if len(df) != 600:
+        print(f"WARNING: expected 600 basic_class rows, got {len(df)}", flush=True)
 
     items = []
     for _, r in df.iterrows():

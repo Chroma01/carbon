@@ -4,11 +4,6 @@ vLLM has no scoring-only API, so each pair is sent as a single prompt (context +
 `prompt_logprobs=0`, which returns the logprob of every prompt token under the model. Summing over the
 continuation's positions gives exactly the teacher-forced NLL that a `forward()` pass would give, with no
 generation and no sampling.
-
-The options of one question share their whole context, so prefix caching can in principle prefill the long DNA
-prefix once instead of once per option. It is left on (vLLM's own default) and `--no-prefix-caching` turns it off.
-The reason to care is correctness, not speed: scoring SeqQA both ways gave identical NLLs, confirming that caching
-does not perturb `prompt_logprobs`, and it made no measurable difference to runtime on these prompt lengths.
 """
 import time
 
@@ -41,9 +36,8 @@ def score(llm, pairs, max_len, reserve=0):
     """pairs: list of (context_ids, continuation_ids). Returns the summed NLL of each continuation, in nats.
 
     The context is left-truncated, never the continuation, so the scored tokens are always the full continuation.
-    `reserve` is how many extra token slots to leave free, which differs by task for historical reasons: the MCQ
-    scorer keeps `max_length - len(cont) - 1` context tokens (reserve=1), the GenomeQA scorer truncates the
-    concatenation to `maxlen` with nothing reserved (reserve=0). It only matters on rows that actually overflow.
+    `reserve` is how many extra token slots to leave free: 1 for the MCQ scorer, 0 for GenomeQA. It only changes
+    rows that actually overflow.
     """
     from vllm import SamplingParams
     from vllm.inputs import TokensPrompt
