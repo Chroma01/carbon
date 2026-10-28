@@ -50,6 +50,7 @@ trained on their own before anything else is unfrozen.
 ```bash
 cd training/midtraining
 mkdir -p logs          # the tokenization scripts write their datatrove logs here
+export DNA_DIR=... BIO_DIR=... ENGLISH_DIR=...       # where step 1 writes the tokenized shards
 
 # 1. tokenize, once per FineDNA source. See the mapping table below for the output path and name each
 #    source has to land under, and set --n_tasks near the file count of that source.
@@ -67,14 +68,13 @@ export MEGATRON_PATH=/path/to/Megatron-LM
 cp pretrain_gpt_freeze_body_untied.py "$MEGATRON_PATH"/     # step 4 runs it from inside the Megatron tree
 
 # 4. train the DNA rows only, starting from the imported scaffold
-export MEG_DATA=/path/to/tokenized/eukaryote
+export MEG_DATA=$DNA_DIR/eukaryote                   # the shards from step 1, nothing extra to tokenize
 export PRETRAINED_MEGATRON_CKPT=./megatron/qwen3-14b-hybrid-npad
 export SAVE_PATH=./checkpoints/freeze-body-dna-10b
 sbatch slurm/freeze_dna_embeddings.slurm
 
 # 5. midtrain, starting from step 4's OUTPUT, not from the scaffold
 export PRETRAINED_MEGATRON_CKPT=./checkpoints/freeze-body-dna-10b
-export DNA_DIR=... BIO_DIR=... ENGLISH_DIR=...
 export MIXTURE=$PWD/configs/mixture_300b.sh          # sbatch runs from the spool, so pass this explicitly
 bash slurm/midtrain_300b.slurm --dry-run             # check the blend first, no GPUs
 sbatch slurm/midtrain_300b.slurm
@@ -141,11 +141,14 @@ Tokenizing them separately also works, as long as each run uses its own `--save_
 keyed on the input as well as the output, so the runs stay independent, and the script refuses to reuse a
 `--save_name` that already has shards there.
 
-Step 4 does not read FineDNA. The freeze stage trained on `eukaryote_generator_10B_subset` from
+Step 4 needs no tokenization of its own: it reads the eukaryote shards from the table above, the same ones step 5
+uses, and consumes about 10B tokens of them weighted by species. Point `MEG_DATA` at `$DNA_DIR/eukaryote`.
+
+The published freeze run instead read a ~10B-token cut of
 [`HuggingFaceBio/carbon-pretraining-corpus`](https://huggingface.co/datasets/HuggingFaceBio/carbon-pretraining-corpus),
-a ~10B-token cut that FineDNA does not carry. Tokenize it as `gener_metadata_100k_<subset>_qwen3h_npad` with
-`--n_tasks` of fungi 10, invertebrate 10, plant 10, protozoa 4, vertebrate_mammalian 20, vertebrate_other 30;
-`slurm/freeze_dna_embeddings.slurm` lists each shard index, so those counts have to match.
+which is the same genomes chunked differently: 90% of its records are in FineDNA's eukaryote sources, which hold
+roughly 450B bases against the 10B this stage reads. Since the stage only fits freshly initialised DNA embedding
+rows, the substitution is equivalent rather than identical.
 
 ### Running the tokenizer
 
