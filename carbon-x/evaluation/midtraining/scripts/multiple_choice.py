@@ -4,8 +4,7 @@
   CF  = cloze: score each option text as a continuation of "Question ...\\nAnswer: ", take the lowest
         bits-per-byte (summed NLL / (utf8 bytes * ln2)).
 
-Scoring goes through scripts/scoring.py; see that file for how a scoring-only pass is done on vLLM. Contexts
-are left-truncated with one token reserved (reserve=1), matching the scorer these numbers were first produced with.
+Scoring goes through scripts/scoring.py. Contexts are left-truncated with one token reserved.
 
 DNA is not tagged here: Carbon's tokenizer wraps A/C/G/T runs in <dna>...</dna> itself, and a plain-BPE model has
 no DNA tokens to route to, so the text is scored as it comes.
@@ -32,15 +31,13 @@ def _cap(s):
 def build_mcf_prompt(question, options, style="plain"):
     """The option list a model is asked to pick a letter from.
 
-    Two renderings, because the published numbers were produced by two different harnesses and the choice is worth
-    about four points on an instruction-tuned model:
+      plain      "Question: {q}" then "A. {opt}" per line. Used for SeqQA and HellaSwag.
+      lighteval  the same, but every option line opens with a space and the question and options are capitalised
+                 (" A. {Opt}"). This matches lighteval's MCF template byte for byte. Used for MMLU-Pro and
+                 OpenBookQA.
 
-      plain      "Question: {q}" then "A. {opt}" per line. This is what the in-house MCQ scorer used, and it is what
-                 the DNA tasks (SeqQA, GenomeQA) were scored with.
-      lighteval  "Question: {Q}" then " A. {Opt}" per line: each option line opens with a space and each option and
-                 the question are capitalised. This reproduces lighteval's MCF template byte for byte (checked
-                 against its own `get_mcq_prompt_function` on all 717 MMLU-Pro biology and 500 OpenBookQA rows), and
-                 it is what the English panels of the release post used.
+    The two are not interchangeable: the rendering is worth about four points on an instruction-tuned model, so a
+    task's style has to stay fixed for its numbers to be comparable.
     """
     if style == "lighteval":
         lines = [f"Question: {_cap(str(question))}"]
@@ -69,7 +66,7 @@ def main():
     ap.add_argument("--tensor-parallel-size", type=int, default=1)
     ap.add_argument("--gpu-memory-utilization", type=float, default=0.90)
     ap.add_argument("--prompt-style", choices=["plain", "lighteval"], default="plain",
-                    help="MCF option-list rendering; see build_mcf_prompt. The English tasks of the release post\n                         used lighteval, the DNA tasks used plain.")
+                    help="MCF option-list rendering; see build_mcf_prompt")
     ap.add_argument("--cf-style", choices=["qa", "completion"], default="qa",
                     help="qa: score the option after 'Answer: ' (knowledge questions). "
                          "completion: score the option as a direct continuation of the context (HellaSwag).")
@@ -100,25 +97,23 @@ def main():
         gi = int(gold) if str(gold).lstrip("-").isdigit() else LETTERS.index(str(gold).strip().upper())
         sub = (r.get(a.subtask_field, "all") if a.subtask_field else "all")
         q = str(r[a.question_field])
-        opts_t = opts
 
         rec = {"sub": sub, "gi": gi, "n_opt": len(opts), "mcf": [], "cf": []}
-        mcf_ctx = tok(build_mcf_prompt(q, opts_t, a.prompt_style), add_special_tokens=True)["input_ids"]
+        mcf_ctx = tok(build_mcf_prompt(q, opts, a.prompt_style), add_special_tokens=True)["input_ids"]
         for i in range(len(opts)):
             cont = tok(" " + LETTERS[i], add_special_tokens=False)["input_ids"]
             rec["mcf"].append(len(jobs)); jobs.append((mcf_ctx, cont, None))
         if a.cf_style == "completion":
             # Sentence completion: the option continues the context directly, with no Answer: scaffold. This is how
-            # HellaSwag is conventionally scored, and the scaffold costs it about 9 points, so the framing is not a
-            # cosmetic choice. The leading space is part of the scored continuation and of its byte count.
+            # HellaSwag is conventionally scored, and the scaffold costs it about 9 points. The leading space is
+            # part of the scored continuation and of its byte count.
             cf_ctx = tok(q, add_special_tokens=True)["input_ids"]
-            texts = [" " + o for o in opts_t]
-            norms = [" " + o for o in opts]
+            answers = [" " + o for o in opts]
         else:
             cf_ctx = tok(q + "\nAnswer: ", add_special_tokens=True)["input_ids"]
-            texts, norms = opts_t, opts
-        for ot, o in zip(texts, norms):
-            cont = tok(ot, add_special_tokens=False)["input_ids"]
+            answers = opts
+        for o in answers:
+            cont = tok(o, add_special_tokens=False)["input_ids"]
             rec["cf"].append(len(jobs)); jobs.append((cf_ctx, cont, len(o.encode("utf-8"))))
         rows.append(rec)
 

@@ -1,13 +1,10 @@
 """Tokenize a FineDNA source into Megatron .bin/.idx with the Carbon-X hybrid tokenizer.
 
-Every source in HuggingFaceBio/FineDNA has the same schema -- `text`, `id`, `source`, `metadata` -- so one script
+Every source in HuggingFaceBio/FineDNA has the same schema (`text`, `id`, `source`, `metadata`), so one script
 covers all 23 of them: DNA, bio text, English and instruction data alike. Run it once per source.
 
-The DNA sources arrive already rendered. Eukaryote rows are <dna>-wrapped, and about half of them also carry a
-metadata tag (`<fungi_species><dna>CTCC...`); training dropped the tags half the time, so the rest are plain
-<dna>...</dna>. mRNA and prokaryote are <dna>-wrapped raw sequence. Bio and English text is
-plain prose. Either way you do not need to tag anything yourself, and tagging again would be harmless: the
-tokenizer inserts <dna> tags where they are missing and is idempotent where they are not.
+Feed the text in as it comes. Nothing needs tagging beforehand: the tokenizer wraps A/C/G/T runs in
+<dna>...</dna> itself and is idempotent on runs that are already wrapped.
 
 Set --n_tasks close to the number of input files: datatrove writes one shard per task, so asking for more tasks
 than there are files leaves 0-byte shards that the training blend then has to skip.
