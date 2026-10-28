@@ -27,14 +27,12 @@ import sys
 
 import datasets
 import transformers
-from datasets import load_dataset
 from transformers import set_seed
 from transformers.trainer_utils import get_last_checkpoint
 from trl import ModelConfig, ScriptArguments, SFTTrainer, TrlParser, get_peft_config
 
 from carbon_x.callbacks import LogTrainingSamplesCallback
 from carbon_x.configs import SFTConfig
-from carbon_x.hub import cleanup_output_dir
 from carbon_x.logging import init_trackio_training
 from carbon_x.model_utils import get_model, get_tokenizer
 
@@ -76,9 +74,12 @@ def main(script_args, training_args, model_args):
         init_trackio_training(training_args)
 
     ################
-    # Load datasets
+    # Load dataset
     ################
-    dataset = load_dataset(script_args.dataset_name, script_args.dataset_config)
+    train_dataset = datasets.load_dataset(
+        script_args.dataset_name, name=script_args.dataset_config, split=script_args.dataset_train_split,
+    )
+
     ################
     # Load tokenizer
     ################
@@ -96,7 +97,7 @@ def main(script_args, training_args, model_args):
     trainer = SFTTrainer(
         model=model,
         args=training_args,
-        train_dataset=dataset[script_args.dataset_train_split],
+        train_dataset=train_dataset,
         processing_class=tokenizer,
         peft_config=get_peft_config(model_args),
     )
@@ -117,7 +118,7 @@ def main(script_args, training_args, model_args):
         checkpoint = last_checkpoint
     train_result = trainer.train(resume_from_checkpoint=checkpoint)
     metrics = train_result.metrics
-    metrics["train_samples"] = len(dataset[script_args.dataset_train_split])
+    metrics["train_samples"] = len(train_dataset)
     trainer.log_metrics("train", metrics)
     trainer.save_metrics("train", metrics)
     trainer.save_state()
@@ -129,6 +130,8 @@ def main(script_args, training_args, model_args):
     # Align the model's generation config with the tokenizer's eos token
     # to avoid unbounded generation in the transformers `pipeline()` function
     trainer.model.generation_config.eos_token_id = tokenizer.eos_token_id
+    trainer.model.generation_config.pad_token_id = tokenizer.pad_token_id
+    trainer.model.config.use_cache = True
     trainer.save_model(training_args.output_dir)
     logger.info(f"Model saved to {training_args.output_dir}")
 
@@ -139,23 +142,14 @@ def main(script_args, training_args, model_args):
     }
     if trainer.accelerator.is_main_process:
         trainer.create_model_card(**kwargs)
-        # Restore k,v cache for fast inference
-        trainer.model.config.use_cache = True
-        trainer.model.config.save_pretrained(training_args.output_dir)
+        tokenizer.save_pretrained(training_args.output_dir)
 
     #############
     # push to hub
     #############
     if training_args.push_to_hub:
         logger.info("Pushing to hub...")
-        push_error = None
-        try:
-            trainer.push_to_hub(**kwargs)
-        except Exception as error:
-            push_error = error
-        cleanup_output_dir(training_args, push_succeeded=push_error is None)
-        if push_error is not None:
-            raise push_error
+        trainer.push_to_hub(**kwargs)
 
 
 if __name__ == "__main__":

@@ -1,4 +1,4 @@
-# Config for 2 nodes with GBS = 32 (per-device batch 2, accumulation 1)
+# Config for 1 node with 8 GPUs and GBS = 32 (per-device batch 2, accumulation 2)
 model_name_or_path: HuggingFaceBio/Carbon-X-Base
 model_revision: main
 attn_implementation: kernels-community/vllm-flash-attn3
@@ -7,7 +7,7 @@ dataset_num_proc: 12
 assistant_only_loss: true
 bf16: true
 eos_token: <|im_end|>
-gradient_accumulation_steps: 1
+gradient_accumulation_steps: 2
 gradient_checkpointing: true
 gradient_checkpointing_kwargs:
   use_reentrant: false
