@@ -37,7 +37,7 @@ import sys
 import datasets
 import transformers
 from datasets import load_dataset
-from transformers import AutoTokenizer, set_seed
+from transformers import set_seed
 from transformers.trainer_utils import get_last_checkpoint
 from trl import TrlParser
 from trl.chat_template_utils import qwen3_schema
@@ -45,6 +45,7 @@ from trl.experimental.async_grpo import AsyncGRPOTrainer
 
 from carbon_x.configs import RLConfig, RLScriptArguments
 from carbon_x.logging import init_trackio_training
+from carbon_x.model_utils import get_tokenizer
 from carbon_x.rewards import get_reward_funcs
 
 
@@ -100,11 +101,7 @@ def main(script_args, training_args):
     model_init_kwargs.setdefault("revision", script_args.model_revision)
     training_args.model_init_kwargs = model_init_kwargs
 
-    tokenizer = AutoTokenizer.from_pretrained(
-        script_args.model_name_or_path,
-        revision=script_args.model_revision,
-        trust_remote_code=training_args.trust_remote_code,
-    )
+    tokenizer = get_tokenizer(script_args, training_args)
     # Carbon's training template uses Qwen3 response formatting.
     tokenizer.response_schema = qwen3_schema
 
