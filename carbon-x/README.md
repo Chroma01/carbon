@@ -26,8 +26,7 @@ Run commands from `carbon-x/`. Install dependencies with:
 uv sync
 ```
 
-See [`training/posttraining/`](training/posttraining) for SFT launch and
-checkpoint resume commands.
+See [`training/posttraining/`](training/posttraining) for training launch commands.
 
 ## Layout
 

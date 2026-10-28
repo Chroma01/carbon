@@ -30,34 +30,12 @@ uv sync
 
 ### SFT
 
-The production recipe uses BF16 model weights, assistant-only causal language
-model loss, a maximum length of 9,984 tokens, and each example's
-`chat_template_kwargs`, including `tokenizer_kwargs.auto_dna_tags`. It uses the
-model's bundled tokenizer and training chat template, with `<|im_end|>` as EOS.
-`warmup_steps: 0.03` means a 3% warmup.
-
-The production config enables Trackio and Hub checkpoint publishing:
+See [`sft.yaml`](sft.yaml) for training hyperparameters. Launch with:
 
 ```sh
-# SFT: 2 nodes, global batch size 32, 3 epochs
-sbatch --nodes=2 training/posttraining/sft.slurm --config training/posttraining/sft.yaml --accelerator deepspeed_zero3
+sbatch --nodes=2 training/posttraining/sft.slurm \
+  --config training/posttraining/sft.yaml --accelerator deepspeed_zero3
 ```
-
-Checkpoints stay in the configured output directory on shared storage.
-Adjust the Slurm partition and CUDA module for your cluster.
-
-Pass training overrides after `--`:
-
-```sh
-sbatch --nodes=1 training/posttraining/sft.slurm \
-  --config training/posttraining/sft.yaml --accelerator deepspeed_zero3 -- \
-  --output_dir scratch/my-sft --push_to_hub false --report_to none \
-  --resume_from_checkpoint scratch/my-sft/checkpoint-100
-```
-
-Without an explicit resume argument, training resumes the latest checkpoint in
-`output_dir`. Use a new output directory for a fresh run. Local outputs are
-retained after publishing.
 
 ### RL
 
