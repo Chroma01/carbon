@@ -30,12 +30,24 @@ uv sync
 
 ### SFT
 
-See [`sft.yaml`](sft.yaml) for training hyperparameters. Launch with:
+See [`sft.yaml`](sft.yaml) for training hyperparameters. Run on a single node with eight GPUs:
+
+```sh
+uv run accelerate launch \
+  --config_file training/posttraining/accelerate_configs/deepspeed_zero3.yaml \
+  --num_machines 1 --num_processes 8 \
+  training/posttraining/sft.py --config training/posttraining/sft.yaml
+```
+
+Or launch with Slurm:
 
 ```sh
 sbatch --nodes=2 training/posttraining/sft.slurm \
   --config training/posttraining/sft.yaml --accelerator deepspeed_zero3
 ```
+
+The Slurm scripts are optimized for the Hugging Face Compute Cluster. Adjust their resource requests and environment
+setup for your cluster.
 
 ### RL
 
