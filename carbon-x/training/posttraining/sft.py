@@ -22,8 +22,8 @@ accelerate launch --config_file training/posttraining/accelerate_configs/deepspe
 """
 
 import logging
+import os
 import sys
-from pathlib import Path
 
 import datasets
 import transformers
@@ -64,15 +64,11 @@ def main(script_args, training_args, model_args):
     logger.info(f"Training parameters {training_args}")
 
     # Check for last checkpoint
-    checkpoint = training_args.resume_from_checkpoint
-    if (
-        checkpoint is None
-        and not getattr(training_args, "overwrite_output_dir", False)
-        and Path(training_args.output_dir).is_dir()
-    ):
-        checkpoint = get_last_checkpoint(training_args.output_dir)
-    if checkpoint:
-        logger.info("Resuming training from %s", checkpoint)
+    last_checkpoint = None
+    if os.path.isdir(training_args.output_dir):
+        last_checkpoint = get_last_checkpoint(training_args.output_dir)
+    if last_checkpoint is not None and training_args.resume_from_checkpoint is None:
+        logger.info(f"Checkpoint detected, resuming training at {last_checkpoint=}.")
 
     if "trackio" in training_args.report_to:
         init_trackio_training(training_args)
@@ -115,6 +111,11 @@ def main(script_args, training_args, model_args):
     # Training loop
     ###############
     logger.info("*** Train ***")
+    checkpoint = None
+    if training_args.resume_from_checkpoint is not None:
+        checkpoint = training_args.resume_from_checkpoint
+    elif last_checkpoint is not None:
+        checkpoint = last_checkpoint
     train_result = trainer.train(resume_from_checkpoint=checkpoint)
     metrics = train_result.metrics
     metrics["train_samples"] = len(train_dataset)
