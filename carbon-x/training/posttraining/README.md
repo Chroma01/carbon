@@ -42,7 +42,7 @@ uv run accelerate launch \
 Or launch with Slurm:
 
 ```sh
-sbatch --nodes=2 training/posttraining/sft.slurm \
+sbatch --nodes=1 training/posttraining/sft.slurm \
   --config training/posttraining/sft.yaml --accelerator deepspeed_zero3
 ```
 

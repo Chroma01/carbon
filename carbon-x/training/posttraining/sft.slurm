@@ -1,5 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=carbon-x-sft
+#SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-gpu=10
 #SBATCH --gres=gpu:8
@@ -12,7 +13,7 @@
 # Run from the carbon-x/ directory after `uv sync`.
 # On this cluster, run `venv-ship .venv` after installing dependencies.
 # Usage:
-#   sbatch --nodes=2 training/posttraining/sft.slurm --config training/posttraining/sft.yaml --accelerator deepspeed_zero3
+#   sbatch --nodes=1 training/posttraining/sft.slurm --config training/posttraining/sft.yaml --accelerator deepspeed_zero3
 set -euo pipefail
 
 CONFIG_FILE=""
