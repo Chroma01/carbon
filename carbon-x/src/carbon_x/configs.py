@@ -66,18 +66,13 @@ class RLScriptArguments(trl.ScriptArguments):
 
 
 @dataclass
-class RLModelConfig(trl.ModelConfig):
-    """Model arguments for RL; AsyncGRPOConfig owns dtype."""
-
-    dtype: str | None = field(default=None, init=False)
-
-
-@dataclass
 class RLConfig(ConfigMixin, AsyncGRPOConfig):
     """
     RL config that adds chat template and Trackio fields on top of the experimental async GRPO config.
     """
 
+    # ModelConfig owns --dtype; retain AsyncGRPO's default without registering it twice.
+    dtype: str = field(default="float32", init=False)
     dataset_num_proc: int | None = field(
         default=None,
         metadata={"help": "Number of processes to use for loading and preparing the dataset."},

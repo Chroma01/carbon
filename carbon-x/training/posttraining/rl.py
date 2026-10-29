@@ -39,11 +39,11 @@ import transformers
 from datasets import load_dataset
 from transformers import set_seed
 from transformers.trainer_utils import get_last_checkpoint
-from trl import TrlParser
+from trl import ModelConfig, TrlParser
 from trl.chat_template_utils import qwen3_schema
 from trl.experimental.async_grpo import AsyncGRPOTrainer
 
-from carbon_x.configs import RLConfig, RLModelConfig, RLScriptArguments
+from carbon_x.configs import RLConfig, RLScriptArguments
 from carbon_x.logging import init_trackio_training
 from carbon_x.model_utils import get_tokenizer
 from carbon_x.rewards import get_reward_funcs
@@ -53,6 +53,8 @@ logger = logging.getLogger(__name__)
 
 
 def main(script_args, training_args, model_args):
+    training_args.dtype = model_args.dtype or training_args.dtype
+
     # Set seed for reproducibility
     set_seed(training_args.seed)
 
@@ -140,6 +142,6 @@ def main(script_args, training_args, model_args):
 
 
 if __name__ == "__main__":
-    parser = TrlParser((RLScriptArguments, RLConfig, RLModelConfig))
+    parser = TrlParser((RLScriptArguments, RLConfig, ModelConfig))
     script_args, training_args, model_args = parser.parse_args_and_config()
     main(script_args, training_args, model_args)
