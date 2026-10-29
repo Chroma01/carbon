@@ -39,7 +39,7 @@ import transformers
 from datasets import load_dataset
 from transformers import set_seed
 from transformers.trainer_utils import get_last_checkpoint
-from trl import TrlParser
+from trl import ModelConfig, TrlParser
 from trl.chat_template_utils import qwen3_schema
 from trl.experimental.async_grpo import AsyncGRPOTrainer
 
@@ -52,7 +52,9 @@ from carbon_x.rewards import get_reward_funcs
 logger = logging.getLogger(__name__)
 
 
-def main(script_args, training_args):
+def main(script_args, training_args, model_args):
+    training_args.dtype = model_args.dtype or training_args.dtype
+
     # Set seed for reproducibility
     set_seed(training_args.seed)
 
@@ -71,6 +73,7 @@ def main(script_args, training_args):
     transformers.utils.logging.enable_default_handler()
     transformers.utils.logging.enable_explicit_format()
 
+    logger.info(f"Model parameters {model_args}")
     logger.info(f"Script parameters {script_args}")
     logger.info(f"Training parameters {training_args}")
 
@@ -98,10 +101,10 @@ def main(script_args, training_args):
     # Model init kwargs
     ################
     model_init_kwargs = training_args.model_init_kwargs or {}
-    model_init_kwargs.setdefault("revision", script_args.model_revision)
+    model_init_kwargs.setdefault("revision", model_args.model_revision)
     training_args.model_init_kwargs = model_init_kwargs
 
-    tokenizer = get_tokenizer(script_args, training_args)
+    tokenizer = get_tokenizer(model_args, training_args)
     # Carbon's training template uses Qwen3 response formatting.
     tokenizer.response_schema = qwen3_schema
 
@@ -109,7 +112,7 @@ def main(script_args, training_args):
     # Training
     ################
     trainer = AsyncGRPOTrainer(
-        model=script_args.model_name_or_path,
+        model=model_args.model_name_or_path,
         args=training_args,
         train_dataset=train_dataset,
         reward_funcs=get_reward_funcs(script_args, training_args.max_completion_length),
@@ -139,6 +142,6 @@ def main(script_args, training_args):
 
 
 if __name__ == "__main__":
-    parser = TrlParser((RLScriptArguments, RLConfig))
-    script_args, training_args = parser.parse_args_and_config()
-    main(script_args, training_args)
+    parser = TrlParser((RLScriptArguments, RLConfig, ModelConfig))
+    script_args, training_args, model_args = parser.parse_args_and_config()
+    main(script_args, training_args, model_args)
