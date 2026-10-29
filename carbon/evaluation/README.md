@@ -200,12 +200,15 @@ base is the ref / alt nucleotide to get `P(ref)` and `P(alt)`. Score is
 `log(P(ref) / P(alt))` — higher when the alt is more surprising. AUROC of
 score vs `label == 1`.
 
-Dataset: [`HuggingFaceBio/clinvar-vep-final`](https://huggingface.co/datasets/HuggingFaceBio/clinvar-vep-final).
+Dataset: [`HuggingFaceBio/clinvar-vep`](https://huggingface.co/datasets/HuggingFaceBio/clinvar-vep).
 This is the GenerTeam ClinVar release (mostly coding) augmented with a
 Carbon-curated noncoding split, since GenerTeam's release is ~99 % coding and
 we wanted balanced coverage. Schema: `chrom, pos, ref, alt, label, region,
 variant_type, …`. If `region` or `variant_type` is present, the script prints
-per-breakdown AUROC / AUPRC automatically.
+per-breakdown AUROC / AUPRC automatically. The script scores the `coding`
+subset by default; pass
+`--clinvar_path hf://datasets/HuggingFaceBio/clinvar-vep/non_coding/clinvar_non_coding.parquet`
+for the noncoding one.
 
 ```bash
 # Carbon 3B hybrid (flagship, 8 GPUs, 24 kbp context)
@@ -296,7 +299,7 @@ Six context lengths (`--ctx`, given in **6-mer tokens** — Carbon's native toke
 | 65536  | 393 kbp | stitched |
 | 131072 | 786 kbp | stitched |
 
-Dataset is `HuggingFaceBio/genome-niah` (auto-loaded). Each (task, ctx) cell has
+Dataset is `HuggingFaceBio/genomic-niah` (auto-loaded). Each (task, ctx) cell has
 n=500 rows by default. Pass `--max_samples N` for quick smoke tests.
 
 **Metrics.** **The default / headline metric is `gen_exact_match`** — that's the number we report in tables, the one users should compare against. The other two are auxiliary diagnostics, written to the same JSON for convenience but not the primary score.

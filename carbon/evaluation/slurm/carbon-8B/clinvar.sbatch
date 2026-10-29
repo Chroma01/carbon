@@ -27,12 +27,12 @@ mkdir -p "$OUT/coding" "$OUT/non_coding"
 
 "${UV_RUN[@]}" python "evaluation/clinvar_vep_eval.py" \
     --model "$MODEL" \
-    --clinvar_path hf://datasets/HuggingFaceBio/clinvar-vep-final/coding/clinvar_coding.parquet \
+    --clinvar_path hf://datasets/HuggingFaceBio/clinvar-vep/coding/clinvar_coding.parquet \
     --add_dna_tag --bf16 --context_length "$CONTEXT_LENGTH" \
     --output_dir "$OUT/coding"
 
 "${UV_RUN[@]}" python "evaluation/clinvar_vep_eval.py" \
     --model "$MODEL" \
-    --clinvar_path hf://datasets/HuggingFaceBio/clinvar-vep-final/non_coding/clinvar_non_coding.parquet \
+    --clinvar_path hf://datasets/HuggingFaceBio/clinvar-vep/non_coding/clinvar_non_coding.parquet \
     --add_dna_tag --bf16 --context_length "$CONTEXT_LENGTH" \
     --output_dir "$OUT/non_coding"
