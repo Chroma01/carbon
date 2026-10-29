@@ -16,10 +16,10 @@ import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer, PreTrainedTokenizer
 from trl import ModelConfig, get_quantization_config
 
-from .configs import RLConfig, SFTConfig
+from .configs import SFTConfig
 
 
-def get_tokenizer(model_args: ModelConfig, training_args: SFTConfig | RLConfig) -> PreTrainedTokenizer:
+def get_tokenizer(model_args: ModelConfig, training_args: SFTConfig) -> PreTrainedTokenizer:
     """Get the tokenizer for the model."""
     tokenizer = AutoTokenizer.from_pretrained(
         model_args.model_name_or_path,

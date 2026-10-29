@@ -55,6 +55,8 @@ class RLScriptArguments(trl.ScriptArguments):
             Column to use as prompts for training.
     """
 
+    model_name_or_path: str | None = field(default=None, metadata={"help": "The model to train."})
+    model_revision: str = field(default="main", metadata={"help": "The model revision to load."})
     reward_funcs: list[str] = field(
         default_factory=lambda: [],
         metadata={"help": "List of reward functions, by their names in `carbon_x.rewards.get_reward_funcs`."},
@@ -71,8 +73,6 @@ class RLConfig(ConfigMixin, AsyncGRPOConfig):
     RL config that adds chat template and Trackio fields on top of the experimental async GRPO config.
     """
 
-    # ModelConfig owns --dtype; retain AsyncGRPO's default without registering it twice.
-    dtype: str = field(default="float32", init=False)
     dataset_num_proc: int | None = field(
         default=None,
         metadata={"help": "Number of processes to use for loading and preparing the dataset."},
