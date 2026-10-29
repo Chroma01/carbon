@@ -21,6 +21,6 @@ python prep_traitgym.py --config mendelian_traits --push_to_hub
 
 ClinVar has no prep script here because the production eval
 ([`clinvar_vep_eval.py`](../clinvar_vep_eval.py)) pulls
-[`HuggingFaceBio/clinvar-vep-final`](https://huggingface.co/datasets/HuggingFaceBio/clinvar-vep-final)
+[`HuggingFaceBio/clinvar-vep`](https://huggingface.co/datasets/HuggingFaceBio/clinvar-vep)
 directly — that dataset is GenerTeam's ClinVar release (mostly coding)
 augmented with a Carbon-curated noncoding split.

@@ -17,7 +17,7 @@ GENERator paper. This is *different* from the BRCA / TraitGym recipe in
     5. Score = log(P(ref) / P(alt)) — higher when the alt is more surprising
        (i.e. the variant is pathogenic). AUROC of score vs label==1.
 
-Dataset: `HuggingFaceBio/clinvar-vep-final` (GenerTeam coding ClinVar + Carbon's
+Dataset: `HuggingFaceBio/clinvar-vep` (GenerTeam coding ClinVar + Carbon's
 extra noncoding curation, since GenerTeam's release is ~99% coding).
 
 Backends & flags follow the rest of the evaluation suite:
@@ -62,7 +62,7 @@ from tqdm import tqdm
 from transformers import AutoConfig, AutoModelForCausalLM, AutoTokenizer
 
 DEFAULT_HG38 = "hf://datasets/GenerTeam/variant-effect-prediction/hg38.parquet"
-DEFAULT_CLINVAR = "hf://datasets/HuggingFaceBio/clinvar-vep-final/clinvar_vep_final.parquet"
+DEFAULT_CLINVAR = "hf://datasets/HuggingFaceBio/clinvar-vep/coding/clinvar_coding.parquet"
 
 
 def parse_args():
@@ -71,7 +71,7 @@ def parse_args():
     p.add_argument("--revision", default=None)
     p.add_argument("--backend", choices=["hf", "evo2"], default="hf")
     p.add_argument("--hg38_path", default=DEFAULT_HG38, help="hg38 reference parquet (chrom -> sequence)")
-    p.add_argument("--clinvar_path", default=DEFAULT_CLINVAR)
+    p.add_argument("--clinvar_path", default=DEFAULT_CLINVAR, help="ClinVar parquet (default: the coding subset)")
     p.add_argument("--context_length", type=int, default=24000,
                    help="Left-context length in bp (variant sits just past the right end).")
     p.add_argument("--batch_size", type=int, default=4)

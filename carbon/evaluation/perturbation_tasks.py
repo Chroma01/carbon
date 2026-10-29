@@ -15,7 +15,7 @@ Available tasks:
     Replace codons in a CDS with synonyms encoding the same amino acid. The
     real codon usage should be preferred over the synonymous variant.
 
-Dataset: HuggingFaceBio/carbon-perturbation-bench
+Dataset: HuggingFaceBio/perturbation-bench
 Columns: original_sequence (real), sequence (perturbed)
 Metric: pairwise discrimination accuracy = mean(LL(real) > LL(perturbed))
 
@@ -53,7 +53,7 @@ from tqdm import tqdm
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 # pos_col (real, unperturbed) and neg_col (perturbed) for each task,
-# plus the matching subset name in HuggingFaceBio/carbon-perturbation-bench.
+# plus the matching subset name in HuggingFaceBio/perturbation-bench.
 TASKS = {
     "motif_human":             {"pos": "original_sequence", "neg": "sequence", "subset": "motif_human"},
     "syn_human":               {"pos": "original_sequence", "neg": "sequence", "subset": "syn_human"},
@@ -68,7 +68,7 @@ def parse_args():
     p.add_argument("--model", required=True, help="HF repo / local path / evo2 model name")
     p.add_argument("--revision", default=None)
     p.add_argument("--backend", choices=["hf", "evo2"], default="hf")
-    p.add_argument("--dataset", default="HuggingFaceBio/carbon-perturbation-bench")
+    p.add_argument("--dataset", default="HuggingFaceBio/perturbation-bench")
     p.add_argument("--subset", default=None,
                    help="HF dataset config. Defaults to the per-task subset.")
     p.add_argument("--split", default="test")

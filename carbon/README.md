@@ -101,7 +101,7 @@ what the fork adds.
 ## Evaluation
 
 This repo ships a **suite of seven zero-shot DNA evaluations** with
-reproducible code. The benchmark datasets are available in this [collection](https://huggingface.co/collections/HuggingFaceBio/dna-benchmarks).
+reproducible code. The benchmark datasets are available in this [collection](https://huggingface.co/collections/HuggingFaceBio/carbon-pure-dna-benchmarks).
 
 The suite covers four modes of zero-shot evaluation:
 
@@ -126,7 +126,7 @@ comparable across model families.
 | **Synonymous codon substitution** | CDS codons are replaced with the highest-frequency synonym for the target species (human or mouse); amino acid identity is preserved by construction. The model should prefer native codon usage over the codon-optimised variant. Probes coding-sequence structure and species-specific codon bias. | [`perturbation_tasks.py`](evaluation/perturbation_tasks.py) `--task syn_human` / `--task syn_mouse` |
 | **BRCA2 VEP** | Zero-shot VEP on saturation-mutagenesis BRCA2 ([Huang 2025](https://www.nature.com/articles/s41586-024-08388-8)). Centered 8 kb window + full-LL delta. | [`vep_eval.py`](evaluation/vep_eval.py) |
 | **TraitGym Mendelian** | 3,380 fine-mapped non-coding regulatory variants for 113 Mendelian diseases ([Benegas et al. 2025](https://www.biorxiv.org/content/10.1101/2025.02.11.637758v1)). Centered 8 kb window + full-LL delta. | [`vep_eval.py`](evaluation/vep_eval.py) |
-| **ClinVar** | Pathogenic vs benign on curated coding + noncoding ClinVar variants. Right-end / next-token scoring with 24 kb left context. | [`clinvar_vep_eval.py`](evaluation/clinvar_vep_eval.py) (uses [`HuggingFaceBio/clinvar-vep-final`](https://huggingface.co/datasets/HuggingFaceBio/clinvar-vep-final) directly) |
+| **ClinVar** | Pathogenic vs benign on curated coding + noncoding ClinVar variants. Right-end / next-token scoring with 24 kb left context. | [`clinvar_vep_eval.py`](evaluation/clinvar_vep_eval.py) (uses [`HuggingFaceBio/clinvar-vep`](https://huggingface.co/datasets/HuggingFaceBio/clinvar-vep) directly) |
 | **Genome-NIAH** | Long-context retrieval: insert a (key, value) pair in a real-genome haystack, ask the model to retrieve the value. Four tasks × six context lengths (up to 786 kbp). | [`genome_niah_eval.py`](evaluation/genome_niah_eval.py) |
 
 See [`evaluation/README.md`](evaluation/README.md) for run commands, DNA-tag
