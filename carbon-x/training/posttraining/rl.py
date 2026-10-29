@@ -40,7 +40,6 @@ from datasets import load_dataset
 from transformers import AutoTokenizer, set_seed
 from transformers.trainer_utils import get_last_checkpoint
 from trl import TrlParser
-from trl.chat_template_utils import qwen3_schema
 from trl.experimental.async_grpo import AsyncGRPOTrainer
 
 from carbon_x.configs import RLConfig, RLScriptArguments
@@ -105,8 +104,6 @@ def main(script_args, training_args):
         revision=script_args.model_revision,
         trust_remote_code=training_args.trust_remote_code,
     )
-    # Carbon's training template uses Qwen3 response formatting.
-    tokenizer.response_schema = qwen3_schema
 
     ################
     # Training
