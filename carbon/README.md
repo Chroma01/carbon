@@ -101,7 +101,7 @@ what the fork adds.
 ## Evaluation
 
 This repo ships a **suite of seven zero-shot DNA evaluations** with
-reproducible code. The benchmark datasets are available in this [collection](https://huggingface.co/collections/HuggingFaceBio/carbon-pure-dna-benchmarks-6a00d741198ec73ef2d3b9a1).
+reproducible code. The benchmark datasets are available in this [collection](https://huggingface.co/collections/HuggingFaceBio/carbon-pure-dna-benchmarks).
 
 The suite covers four modes of zero-shot evaluation:
 
