@@ -55,7 +55,7 @@ export DNA_DIR=... BIO_DIR=... ENGLISH_DIR=...       # where step 1 writes the t
 # 1. tokenize, once per FineDNA source. See the mapping table below for the output path and name each
 #    source has to land under, and set --n_tasks near the file count of that source.
 python tokenization/tokenize_finedna.py \
-    --input hf://datasets/HuggingFaceBio/FineDNA/data/dna_eukaryote_fungi \
+    --input hf://datasets/HuggingFaceBio/FineDNA/mid/dna_eukaryote_fungi \
     --output $DNA_DIR/eukaryote/gener_metadata_fungi_qwen3h_npad \
     --save_name gener_metadata_fungi_qwen3h_npad --n_tasks 16
 
@@ -93,7 +93,7 @@ patches before applying them; step 3 takes `APPLY_BRIDGE_PATCHES=0` to skip. The
 ## Data
 
 Everything is in one dataset, [`HuggingFaceBio/FineDNA`](https://huggingface.co/datasets/HuggingFaceBio/FineDNA),
-under `data/<source>/`. All 23 sources share the schema `text`, `id`, `source`, `metadata`, so one script
+under `mid/<source>/` (the `mid_<source>` configs). All 23 sources share the schema `text`, `id`, `source`, `metadata`, so one script
 tokenizes all of them.
 
 Each subset holds everything the run sampled from for that source, not the full upstream dataset: the DNA is
@@ -106,7 +106,7 @@ The DNA text arrives already rendered. Eukaryote rows are `<dna>`-wrapped, and a
 tag (`<fungi_species><dna>CTCC...`): training dropped the tags half the time, so the rest are plain
 `<dna>...</dna>`. mRNA and prokaryote are `<dna>`-wrapped sequence. Bio and English are plain
 prose, which the tokenizer tags itself. FineDNA also ships the filtering and tagging code that produced this under
-`pipeline/`, if you want to see how the text was built.
+`mid/pipeline/`, if you want to see how the text was built.
 
 | share | FineDNA source | write it to |
 |---|---|---|
@@ -132,7 +132,7 @@ finds the first run's state, skips, and exits cleanly having written nothing:
 
 ```bash
 python tokenization/tokenize_finedna.py \
-    --input hf://datasets/HuggingFaceBio/FineDNA/data --glob 'instruct_nemotron_*/*.parquet' \
+    --input hf://datasets/HuggingFaceBio/FineDNA/mid --glob 'instruct_nemotron_*/*.parquet' \
     --output $ENGLISH_DIR/sft_nemotron_ifchat_v3_qwen3h_npad \
     --save_name sft_nemotron_ifchat_v3_qwen3h_npad --n_tasks 54
 ```

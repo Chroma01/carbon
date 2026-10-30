@@ -1,7 +1,8 @@
 # Model arguments
 model_name_or_path: HuggingFaceBio/Carbon-X-SFT
 model_revision: main
-dataset_name: HuggingFaceBio/FineDNA-RL
+dataset_name: HuggingFaceBio/FineDNA
+dataset_config: rl_mix
 dataset_num_proc: 12
 
 reward_funcs:
