@@ -44,5 +44,6 @@ carbon-x/
 ├── training/
 │   ├── midtraining/          # Megatron-LM
 │   └── posttraining/         # TRL: sft.py, rl.py, configs and Slurm launchers
+├── data/                     # decontamination of training data against the evaluation benchmarks
 └── evaluation/               # Inspect tasks for the five DNA benchmarks and an HF Jobs launcher
 ```
