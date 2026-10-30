@@ -1,7 +1,7 @@
 """
 Remove training rows whose DNA is homologous to an evaluation sequence, using BLAST+ megablast.
 
-Complements `decontaminate_carbon.py`, which removes exact whole-span DNA matches. Training windows that cover the
+Complements `decontaminate_ngram.py`, which removes exact whole-span DNA matches. Training windows that cover the
 same locus as an evaluation window at a different offset or length, or a near-identical copy of it, are not
 whole-span matches; this script finds them by alignment.
 
@@ -14,7 +14,7 @@ almost fully contained.
 BLAST+ is not a Python package. The script uses `blastn` and `makeblastdb` from `--blast_bin_dir` or `PATH`; when
 neither has them, it downloads the pinned BLAST+ 2.17.0 Linux x64 release from NCBI, checks its MD5, and unpacks it
 under `outputs/blast/`, where later runs reuse it.
-Evaluation sets and their revision come from `decontaminate_carbon.py`. Reports are saved to
+Evaluation sets and their revision come from `decontaminate_ngram.py`. Reports are saved to
 `outputs/decontamination/<dataset>/<config>/<split>/homology_report.json`.
 
 Usage:
@@ -40,7 +40,7 @@ from collections.abc import Mapping
 from pathlib import Path
 
 from datasets import Features, List, Value, load_dataset
-from decontaminate_carbon import EVAL_DATASET, EVAL_REVISION, EVALS
+from decontaminate_ngram import EVAL_DATASET, EVAL_REVISION, EVALS
 
 
 DNA_RUN = re.compile(r"[ACGT]{100,}")

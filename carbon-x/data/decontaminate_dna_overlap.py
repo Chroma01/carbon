@@ -1,7 +1,7 @@
 """
 Remove training rows that contain an evaluation DNA sequence in full, or an evaluation SNV with its context.
 
-Complements `decontaminate_carbon.py`, which removes exact whole-span DNA matches. Windows of different lengths or
+Complements `decontaminate_ngram.py`, which removes exact whole-span DNA matches. Windows of different lengths or
 offsets around the same locus (for example a 8,192 bp VEPQA training window containing a 4,096 bp BioReason test
 window) are never whole-span matches; this script catches them.
 
@@ -15,7 +15,7 @@ A training row is removed when, in either orientation, one of its DNA runs (in a
 Candidates come from content-sampled canonical 32-mers shared with the evaluation sequences; each candidate is
 extended base by base to the exact overlap length, so interspersed repeats (Alu, ~300 bp) never qualify.
 
-Evaluation sets and their revision come from `decontaminate_carbon.py`. Reports are saved to
+Evaluation sets and their revision come from `decontaminate_ngram.py`. Reports are saved to
 `outputs/decontamination/<dataset>/<config>/<split>/dna_overlap_report.json`.
 
 Usage:
@@ -36,7 +36,7 @@ from pathlib import Path
 
 import numpy as np
 from datasets import load_dataset
-from decontaminate_carbon import EVAL_DATASET, EVAL_REVISION, EVALS
+from decontaminate_ngram import EVAL_DATASET, EVAL_REVISION, EVALS
 
 
 K = 32

@@ -38,7 +38,7 @@ Publishing also updates a Decontamination section in the dataset card, replacing
 
 Usage:
 
-uv run data/decontaminate_carbon.py \
+uv run data/decontaminate_ngram.py \
     --dataset HuggingFaceBio/FineDNA \
     --config sft_mix \
     --split train \
