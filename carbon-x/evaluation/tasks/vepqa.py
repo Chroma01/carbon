@@ -37,7 +37,7 @@ from inspect_ai.solver import TaskState, generate
 
 
 DATASET_PATH = "HuggingFaceBio/DNAIntelligenceIndex"
-DATASET_REVISION = "afbcf9022f581d92ab697ce5c8dfe65359e4ae5f"
+DATASET_REVISION = "2e156b12ef70c0d2295394f90c885ec450c5c79f"
 FAMILIES = {
     "coding_only": {"nonsense", "missense_variant", "synonymous_variant", "initiator_codon_variant", "stop_lost"},
     "canonical_splice_only": {"splice_acceptor_variant", "splice_donor_variant"},

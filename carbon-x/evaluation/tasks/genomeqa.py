@@ -23,7 +23,7 @@ from metrics import equal_weight_group_stderr
 
 
 DATASET_PATH = "HuggingFaceBio/DNAIntelligenceIndex"
-DATASET_REVISION = "afbcf9022f581d92ab697ce5c8dfe65359e4ae5f"
+DATASET_REVISION = "2e156b12ef70c0d2295394f90c885ec450c5c79f"
 
 
 def record_to_sample(record: dict[str, Any]) -> Sample:
