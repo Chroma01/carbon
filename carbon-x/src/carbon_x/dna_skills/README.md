@@ -1,6 +1,6 @@
 # DNA skills verifier
 
-`verify.py` grades replies to the DNA skills (SeqLocate) prompts of `HuggingFaceBio/FineDNA-RL`, the rows whose
+`verify.py` grades replies to the DNA skills (SeqLocate) prompts of `HuggingFaceBio/FineDNA` (`rl_mix`), the rows whose
 `task_group` is `dna_skills`. The `dna_skills_task` reward in `src/carbon_x/rewards.py` calls its `verify` after
 removing the `<dna>` tags that Carbon's tokenizer adds around DNA.
 

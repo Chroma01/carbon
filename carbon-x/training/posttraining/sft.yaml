@@ -2,7 +2,8 @@
 model_name_or_path: HuggingFaceBio/Carbon-X-Base
 model_revision: main
 attn_implementation: kernels-community/vllm-flash-attn3
-dataset_name: HuggingFaceBio/FineDNA-SFT
+dataset_name: HuggingFaceBio/FineDNA
+dataset_config: sft_mix
 dataset_num_proc: 12
 assistant_only_loss: true
 bf16: true

@@ -187,7 +187,7 @@ def if_accuracy_reward(completions, verifier_metadata, **kwargs) -> list[float]:
     """Score instruction-following completions 1.0 when they satisfy every constraint of their prompt, else 0.0.
 
     Uses the checkers of NeMo Gym's instruction-following verifier, whose inputs the `verifier_metadata` column of the
-    `if` rows of `HuggingFaceBio/FineDNA-RL` stores: each constraint of `instruction_id_list` is built from its
+    `if` rows of `HuggingFaceBio/FineDNA` (`rl_mix`) stores: each constraint of `instruction_id_list` is built from its
     `kwargs` with null values dropped, and a constraint whose checker raises counts as unmet. Every
     `count:count_increment_word` constraint does, because the dataset stores its keywords as lists. As in the `ifeval`
     benchmark's strict scoring, which uses the same checkers for the IFEval constraint types, an empty completion meets

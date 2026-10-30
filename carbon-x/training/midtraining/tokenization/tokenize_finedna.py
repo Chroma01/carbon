@@ -1,6 +1,6 @@
 """Tokenize a FineDNA source into Megatron .bin/.idx with the Carbon-X hybrid tokenizer.
 
-Every source in HuggingFaceBio/FineDNA has the same schema (`text`, `id`, `source`, `metadata`), so one script
+Every mid-training source in HuggingFaceBio/FineDNA has the same schema (`text`, `id`, `source`, `metadata`), so one script
 covers all 23 of them: DNA, bio text, English and instruction data alike. Run it once per source.
 
 Feed the text in as it comes. Nothing needs tagging beforehand: the tokenizer wraps A/C/G/T runs in
@@ -9,7 +9,7 @@ Feed the text in as it comes. Nothing needs tagging beforehand: the tokenizer wr
 Set --n_tasks close to the number of input files: datatrove writes one shard per task, so asking for more tasks
 than there are files leaves 0-byte shards that the training blend then has to skip.
 
-    python tokenize_finedna.py --input hf://datasets/HuggingFaceBio/FineDNA/data/dna_eukaryote_fungi \
+    python tokenize_finedna.py --input hf://datasets/HuggingFaceBio/FineDNA/mid/dna_eukaryote_fungi \
         --output <out>/eukaryote/gener_metadata_fungi_qwen3h_npad \
         --save_name gener_metadata_fungi_qwen3h_npad --n_tasks 16
     # --local runs in this process instead of submitting Slurm jobs; --limit N caps documents PER TASK

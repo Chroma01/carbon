@@ -14,9 +14,9 @@ This directory contains the training recipe and evals for
 
 | Stage | Framework | Starts from | Data | Recipe |
 |---|---|---|---|---|
-| Midtraining | Megatron-LM | `Qwen/Qwen3-14B` | 300B tokens of DNA and text | [`training/midtraining/`](training/midtraining) |
-| SFT | TRL | `HuggingFaceBio/Carbon-X-Base` | `HuggingFaceBio/FineDNA-SFT` | [`training/posttraining/`](training/posttraining) |
-| RL | TRL | `HuggingFaceBio/Carbon-X-SFT` | `HuggingFaceBio/FineDNA-RL` | [`training/posttraining/`](training/posttraining) |
+| Midtraining | Megatron-LM | `Qwen/Qwen3-14B` | `HuggingFaceBio/FineDNA` (`mid_*`) | [`training/midtraining/`](training/midtraining) |
+| SFT | TRL | `HuggingFaceBio/Carbon-X-Base` | `HuggingFaceBio/FineDNA` (`sft_mix`) | [`training/posttraining/`](training/posttraining) |
+| RL | TRL | `HuggingFaceBio/Carbon-X-SFT` | `HuggingFaceBio/FineDNA` (`rl_mix`) | [`training/posttraining/`](training/posttraining) |
 
 ## Installation
 

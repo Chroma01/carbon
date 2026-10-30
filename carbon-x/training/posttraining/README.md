@@ -4,10 +4,11 @@ Post-training of the midtrained
 [`HuggingFaceBio/Carbon-X-Base`](https://huggingface.co/HuggingFaceBio/Carbon-X-Base)
 checkpoint with TRL, in two stages:
 
-1. **SFT** on [`HuggingFaceBio/FineDNA-SFT`](https://huggingface.co/datasets/HuggingFaceBio/FineDNA-SFT), producing
+1. **SFT** on the `sft_mix` config of
+   [`HuggingFaceBio/FineDNA`](https://huggingface.co/datasets/HuggingFaceBio/FineDNA), producing
    [`HuggingFaceBio/Carbon-X-SFT`](https://huggingface.co/HuggingFaceBio/Carbon-X-SFT).
-2. **RL** with verifiable rewards on
-   [`HuggingFaceBio/FineDNA-RL`](https://huggingface.co/datasets/HuggingFaceBio/FineDNA-RL), starting from
+2. **RL** with verifiable rewards on the `rl_mix` config of
+   [`HuggingFaceBio/FineDNA`](https://huggingface.co/datasets/HuggingFaceBio/FineDNA), starting from
    the SFT checkpoint. Rollouts are generated asynchronously by a vLLM server,
    and the config is sized for one generation node and one training node. The
    rewards listed under `reward_funcs` in [`rl.yaml`](rl.yaml) cover
